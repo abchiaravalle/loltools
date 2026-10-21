@@ -1,0 +1,197 @@
+<!doctype html>
+<!--
+  wordcounter.lol. View source. Everything happens in your browser.
+
+  Network activity: the page loads its own files from this domain
+  (index.html, lol.css, lol.js, words.css, count.js, xcount.js, app.js).
+  After that the page's Content-Security-Policy sets connect-src 'none', so
+  the browser blocks every fetch, XHR, beacon or WebSocket, ours included.
+  What you type or open is counted inside this tab and never uploaded.
+
+  Storage: your light/dark choice, in localStorage on your device. If you tick
+  "Keep my draft in this browser", your text is also kept in localStorage,
+  only in this browser on this device. Untick it or press Clear and that copy
+  is deleted. It's off until you turn it on.
+
+  No analytics, no cookies, no ads. No third-party libraries. xcount.js is our
+  plain-JS port of X's open-source post-length rules (twitter-text, Apache 2.0).
+
+  Source: https://github.com/abchiaravalle/loltools
+-->
+<html lang="en">
+<head>
+  <!--@head-->
+  <link rel="stylesheet" href="/words.css?v={{BUILD_DATE}}">
+</head>
+<body>
+  <div class="container">
+    <!--@header-->
+
+    <main>
+      <section class="hero">
+        <h1>Count words and characters as you type</h1>
+        <p class="lede">Paste or type your text and every number updates live, with limits for X, Instagram, LinkedIn, texts and meta descriptions. Your words never leave your device.</p>
+      </section>
+
+      <section class="card wc-tool" aria-labelledby="tool-heading">
+        <h2 id="tool-heading" class="sr-only">Count your text</h2>
+
+        <div class="wc-bar">
+          <label for="text" class="wc-label">Your text</label>
+          <span class="wc-mini" id="mini" aria-hidden="true">0 words · 0 characters</span>
+        </div>
+        <div class="wc-input" id="dropArea">
+          <textarea id="text" spellcheck="true" autocomplete="off" autocapitalize="sentences" placeholder="Type or paste your text here. You can also drop a .txt or .md file on this box." aria-describedby="selInfo"></textarea>
+          <div class="wc-dropmsg" aria-hidden="true">Drop your text file to open it</div>
+        </div>
+        <p class="wc-sel" id="selInfo" aria-live="polite" hidden>
+          <span class="wc-sel-label">Selected:</span>
+          <span><b id="sel-words">0</b> <span id="sel-words-u">words</span></span>
+          <span><b id="sel-chars">0</b> <span id="sel-chars-u">characters</span></span>
+          <span><b id="sel-nospace">0</b> without spaces</span>
+          <span><b id="sel-sentences">0</b> <span id="sel-sentences-u">sentences</span></span>
+        </p>
+        <div class="wc-actions">
+          <button class="btn-ghost sm" type="button" id="openBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/></svg>
+            Open a text file
+          </button>
+          <input type="file" id="fileInput" accept=".txt,.md,.markdown,.text,text/plain,text/markdown" hidden>
+          <button class="btn-ghost sm" type="button" id="clearBtn">Clear</button>
+          <button class="btn-ghost sm" type="button" id="undoBtn" hidden>Undo clear</button>
+        </div>
+        <p class="status wc-status" id="status" role="status" aria-live="polite"></p>
+        <p class="hint wc-fallback" id="fallbackNote" hidden>Your browser doesn't have the built-in text tools this page normally uses, so counts for emoji and for Chinese or Japanese text may be a little off. Updating your browser fixes it.</p>
+
+        <dl class="wc-stats" aria-label="Counts for all of your text">
+          <div class="stat big"><dt>Words</dt><dd id="s-words">0</dd></div>
+          <div class="stat big"><dt>Characters</dt><dd id="s-chars">0</dd></div>
+          <div class="stat"><dt>Characters without spaces</dt><dd id="s-nospace">0</dd></div>
+          <div class="stat"><dt>Sentences</dt><dd id="s-sentences">0</dd></div>
+          <div class="stat"><dt>Paragraphs</dt><dd id="s-paragraphs">0</dd></div>
+          <div class="stat"><dt>Lines</dt><dd id="s-lines">0</dd></div>
+          <div class="stat"><dt>Reading time</dt><dd id="s-read">0 sec</dd><dd class="stat-sub">at 238 words a minute</dd></div>
+          <div class="stat"><dt>Speaking time</dt><dd id="s-speak">0 sec</dd><dd class="stat-sub">at 130 words a minute</dd></div>
+          <div class="stat"><dt>Average word length</dt><dd id="s-avg">0</dd><dd class="stat-sub">letters per word</dd></div>
+          <div class="stat"><dt>Longest word</dt><dd id="s-longest" class="stat-word">none yet</dd><dd class="stat-sub" id="s-longest-n">&nbsp;</dd></div>
+        </dl>
+
+        <h3 class="wc-h3" id="limits-heading">Character limits</h3>
+        <ul class="wc-limits" aria-labelledby="limits-heading">
+          <li class="limit" id="lim-x">
+            <div class="limit-head"><span class="limit-name">X post</span><span class="limit-count"><b id="x-n">0</b> / 280</span></div>
+            <div class="meter" role="progressbar" aria-label="X post length" aria-valuemin="0" aria-valuemax="280" aria-valuenow="0" id="x-bar"><span></span></div>
+            <div class="limit-foot"><span class="limit-note">Counted the way X does: a link is 23, and an emoji or a Chinese, Japanese or Korean character is 2.</span><span class="limit-status" id="x-st">280 left</span></div>
+          </li>
+          <li class="limit" id="lim-ig">
+            <div class="limit-head"><span class="limit-name">Instagram caption</span><span class="limit-count"><b id="ig-n">0</b> / 2,200</span></div>
+            <div class="meter" role="progressbar" aria-label="Instagram caption length" aria-valuemin="0" aria-valuemax="2200" aria-valuenow="0" id="ig-bar"><span></span></div>
+            <div class="limit-foot"><span class="limit-note">Characters</span><span class="limit-status" id="ig-st">2,200 left</span></div>
+          </li>
+          <li class="limit" id="lim-li">
+            <div class="limit-head"><span class="limit-name">LinkedIn post</span><span class="limit-count"><b id="li-n">0</b> / 3,000</span></div>
+            <div class="meter" role="progressbar" aria-label="LinkedIn post length" aria-valuemin="0" aria-valuemax="3000" aria-valuenow="0" id="li-bar"><span></span></div>
+            <div class="limit-foot"><span class="limit-note">Characters</span><span class="limit-status" id="li-st">3,000 left</span></div>
+          </li>
+          <li class="limit" id="lim-meta">
+            <div class="limit-head"><span class="limit-name">Meta description</span><span class="limit-count"><b id="meta-n">0</b> / 160</span></div>
+            <div class="meter has-mark" role="progressbar" aria-label="Meta description length" aria-valuemin="0" aria-valuemax="160" aria-valuenow="0" id="meta-bar"><span></span><i class="meter-mark" style="left:96.875%"></i></div>
+            <div class="limit-foot"><span class="limit-note">Google cuts these by width, usually somewhere from 155 to 160 characters.</span><span class="limit-status" id="meta-st">160 left</span></div>
+          </li>
+          <li class="limit" id="lim-sms">
+            <div class="limit-head"><span class="limit-name">Text message (SMS)</span><span class="limit-count"><b id="sms-n">0</b> / <span id="sms-max">160</span></span></div>
+            <div class="meter" role="progressbar" aria-label="Text message length" aria-valuemin="0" aria-valuemax="160" aria-valuenow="0" id="sms-bar"><span></span></div>
+            <div class="limit-foot"><span class="limit-note" id="sms-note">160 per message. One emoji or special character drops that to 70.</span><span class="limit-status" id="sms-st">160 left</span></div>
+          </li>
+          <li class="limit" id="lim-custom">
+            <div class="limit-head">
+              <span class="limit-name custom-name">
+                <label for="customMax">Your limit</label>
+                <input type="number" id="customMax" min="1" max="10000000" step="1" value="500" inputmode="numeric">
+                <select id="customUnit" aria-label="Count characters or words">
+                  <option value="chars" selected>characters</option>
+                  <option value="words">words</option>
+                </select>
+              </span>
+              <span class="limit-count"><b id="custom-n">0</b> / <span id="custom-max">500</span></span>
+            </div>
+            <div class="meter" role="progressbar" aria-label="Your limit" aria-valuemin="0" aria-valuemax="500" aria-valuenow="0" id="custom-bar"><span></span></div>
+            <div class="limit-foot"><span class="limit-note">For essays, forms and ad copy.</span><span class="limit-status" id="custom-st">500 left</span></div>
+          </li>
+        </ul>
+
+        <div class="wc-top-head">
+          <h3 class="wc-h3" id="top-heading">Words you use most</h3>
+          <label class="check-row hint"><input type="checkbox" id="includeCommon"><span>Include common words like "the" and "and"</span></label>
+        </div>
+        <ol class="wc-top" id="topWords" aria-labelledby="top-heading"></ol>
+        <p class="hint wc-top-empty" id="topEmpty">Words you use twice or more show up here.</p>
+
+        <div class="wc-save">
+          <label class="check-row"><input type="checkbox" id="saveToggle"><span><strong>Keep my draft in this browser.</strong> Off unless you turn it on. When it's on, your text is saved only in this browser on this device, so it's still here if you close the tab. Turn it off or press Clear and the saved copy is deleted.</span></label>
+        </div>
+      </section>
+
+      <section class="card privacy-card" aria-labelledby="privacy-heading">
+        <h2 id="privacy-heading">How your text stays private</h2>
+        <ul class="privacy-grid">
+          <li>
+            <svg class="pg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
+            <div><span class="pg-title">Nothing gets sent</span><span class="pg-desc">The counting runs in this tab. The page's security policy sets <code>connect-src 'none'</code>, so your browser won't let it send your text anywhere, not even to us.</span></div>
+          </li>
+          <li>
+            <svg class="pg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>
+            <div><span class="pg-title">Saving is off until you want it</span><span class="pg-desc">If you tick "Keep my draft", your text is saved only in this browser on this device. Untick it or press Clear and the saved copy is gone.</span></div>
+          </li>
+          <li>
+            <svg class="pg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+            <div><span class="pg-title">Files stay on your device</span><span class="pg-desc">When you open a .txt or .md file, your browser reads it from your disk into this page. It isn't uploaded.</span></div>
+          </li>
+          <li>
+            <svg class="pg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
+            <div><span class="pg-title">No analytics or cookies</span><span class="pg-desc">No tracking scripts, no ads, no account. Our host, Cloudflare, keeps standard logs of page visits, like it does for every site. Your text isn't in them.</span></div>
+          </li>
+        </ul>
+        <p class="privacy-cta">Read every line on <a href="https://github.com/abchiaravalle/loltools">GitHub</a>. The counting is our own plain JavaScript plus your browser's built-in text rules. The X counter follows X's open-source <a href="https://github.com/twitter/twitter-text">twitter-text</a> rules.</p>
+      </section>
+
+      <section class="card faq" aria-labelledby="faq-heading">
+        <h2 id="faq-heading">Questions</h2>
+        <details>
+          <summary>How do you count words?</summary>
+          <p>We use your browser's built-in word rules, which know about many languages. A hyphenated word like well-known is 1 word, and so are don't, U.S.A., 3.14 and 10:30. Dashes and slashes split words, so and/or is 2. A link or email address is 1 word. Emoji and punctuation on their own aren't words.</p>
+          <p>Chinese and Japanese don't put spaces between words, so the browser uses its dictionary to find them. That means counts there can differ a little from Word or other apps.</p>
+        </details>
+        <details>
+          <summary>How do you count characters?</summary>
+          <p>The way you see them. A family emoji like 👨‍👩‍👧‍👦, a flag like 🇯🇵 or an accented letter like é is 1 character, even when it's stored as several pieces under the hood. Spaces and line breaks count as 1 each, except in "characters without spaces". Instagram, LinkedIn and some other apps may count an emoji as 2, so leave a little room near their limits.</p>
+        </details>
+        <details>
+          <summary>Why does the X number differ from the character count?</summary>
+          <p>X weighs characters. Any link counts as 23, however long it is. Each emoji counts as 2, and so does each Chinese, Japanese or Korean character and a few symbols like … and ™. Our X bar follows the counting rules X publishes as open source (twitter-text), rewritten in plain JavaScript. The 280 limit is for free accounts. Paid X accounts can post longer.</p>
+        </details>
+        <details>
+          <summary>Why does a text message drop from 160 to 70 characters?</summary>
+          <p>Plain texts use a small, old character set that fits 160 characters per message. One emoji, or one character outside that set (curly quotes, many accented letters), switches the whole message to a bigger character set that fits 70. Longer texts are split into parts of 153 or 67. Many phones now send over iMessage or RCS, which don't have this limit, but plain SMS still does.</p>
+        </details>
+        <details>
+          <summary>How are sentences, paragraphs and times worked out?</summary>
+          <p>A sentence ends at a period, question mark or exclamation mark (or the Chinese and Japanese versions), but not after titles like Dr. or Mr. or a single initial. A paragraph is any line with text on it, and blank lines don't count. Reading time assumes 238 words a minute, the average for adults reading non-fiction silently (Brysbaert, 2019). Speaking time assumes 130 words a minute, a steady presentation pace. For Chinese and Japanese, treat both times as rough.</p>
+        </details>
+        <details>
+          <summary>Is there a size limit?</summary>
+          <p>Files can be up to 5 MB, and the page opens plain text only (.txt or .md). For Word or PDF files, copy the text and paste it here. Very long texts, like a whole book, update after a short pause so typing stays smooth. A saved draft has to fit in your browser's storage, and the page tells you if it doesn't.</p>
+        </details>
+      </section>
+
+      <!--@more-->
+    </main>
+
+    <!--@footer-->
+  </div>
+
+  <script src="/count.js?v={{BUILD_DATE}}"></script>
+  <script src="/xcount.js?v={{BUILD_DATE}}"></script>
+  <script src="/app.js?v={{BUILD_DATE}}"></script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+{
+  "credits": [
+    {
+      "name": "twitter-text 3.1.0 (X's post-length rules)",
+      "license": "Apache-2.0",
+      "url": "https://github.com/twitter/twitter-text",
+      "file": "/xcount.js",
+      "licenseFile": "/vendor/licenses/twitter-text.LICENSE",
+      "note": "Not the npm package itself: xcount.js is our plain-JavaScript port of its parseTweet() counting, with its link and domain patterns copied unchanged."
+    }
+  ]
+}
