@@ -38,7 +38,7 @@ body[data-tool="topdf"] .tool-nav a[data-tool="topdf"] {
 .sign-toolbar { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.75rem; }
 .sign-toolbar .btn-ghost.armed { color: #fff; background: var(--accent); border-color: var(--accent); }
 #signHint { margin-bottom: 1rem; }
-.sign-pages { display: grid; gap: 1rem; justify-items: center; }
+.sign-pages { display: grid; gap: 1rem; justify-items: center; grid-template-columns: minmax(0, 1fr); }
 .sign-page {
   position: relative; max-width: 100%;
   box-shadow: 0 1px 0 var(--border), 0 0 0 1px var(--border);

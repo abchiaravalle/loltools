@@ -34,6 +34,8 @@
 }
 
 *, *::before, *::after { box-sizing: border-box; }
+/* The hidden attribute always wins, even over components that set display. */
+[hidden] { display: none !important; }
 html, body { margin: 0; padding: 0; }
 body {
   background: var(--bg);

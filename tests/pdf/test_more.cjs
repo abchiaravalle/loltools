@@ -70,6 +70,7 @@ function netCheck(page, label) {
     await page.setInputFiles('#splitInput', F + 'six.pdf');
     await page.waitForSelector('#splitWork:not([hidden])');
     await page.waitForFunction(() => document.querySelectorAll('#splitThumbs .thumb').length === 6);
+    ok('split: dropzone hides and "pages per file" stays hidden in pick mode', !(await page.isVisible('#splitDrop')) && !(await page.isVisible('#splitEveryField')) && await page.isVisible('#splitRangeField'));
     // click pages 2, 4, 5 by thumbnail
     for (const n of [2, 4, 5]) await page.click(`#splitThumbs .thumb:nth-child(${n})`);
     const rv = await page.inputValue('#splitRanges');
@@ -203,6 +204,11 @@ function netCheck(page, label) {
     await page.setInputFiles('#signInput', F + 'rot.pdf');
     await page.waitForFunction(() => document.querySelectorAll('#signPages .sign-page').length === 4, null, { timeout: 60000 });
     await page.waitForTimeout(800);
+    const fitD = await page.evaluate(() => {
+      const card = document.querySelector('#panel-sign').closest('.card').getBoundingClientRect();
+      return [...document.querySelectorAll('.sign-page')].map((p) => p.getBoundingClientRect()).every((r) => r.left >= card.left - 0.5 && r.right <= card.right + 0.5);
+    });
+    ok('sign desktop: every page fits inside the card', fitD);
     ok('sign: save disabled before anything is placed', await page.isDisabled('#signSave'));
     // draw a signature
     await page.click('#sigCreate');
@@ -303,6 +309,12 @@ function netCheck(page, label) {
     await page.screenshot({ path: OUT + 'sign-m430.png' });
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
     ok('sign @430px: no sideways scroll', !overflow);
+    const fit = await page.evaluate(() => {
+      const card = document.querySelector('#panel-sign').closest('.card').getBoundingClientRect();
+      return [...document.querySelectorAll('.sign-page')].map((p) => p.getBoundingClientRect()).every((r) => r.left >= card.left - 0.5 && r.right <= card.right + 0.5);
+    });
+    ok('sign @430px: every page fits inside the card', fit);
+    ok('sign @430px: dropzone hides once a PDF is open', !(await page.isVisible('#signDrop')));
     await page.goto(base + '/split/', { waitUntil: 'load' });
     await page.setInputFiles('#splitInput', F + 'six.pdf');
     await page.waitForTimeout(1500);
