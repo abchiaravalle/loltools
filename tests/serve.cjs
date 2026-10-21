@@ -3,8 +3,9 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
-const [dir, port] = process.argv.slice(2);
-const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.txt': 'text/plain', '.json': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml', '.md': 'text/plain', '.xml': 'application/xml' };
+const [dirArg, port] = process.argv.slice(2);
+const dir = path.resolve(dirArg);
+const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.txt': 'text/plain', '.json': 'application/json', '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.svg': 'image/svg+xml', '.md': 'text/plain', '.xml': 'application/xml', '.wasm': 'application/wasm', '.onnx': 'application/octet-stream', '.gz': 'application/gzip', '.traineddata': 'application/octet-stream', '.bin': 'application/octet-stream', '.mp4': 'video/mp4', '.mp3': 'audio/mpeg' };
 const headers = {};
 try {
   const lines = fs.readFileSync(path.join(dir, '_headers'), 'utf8').split('\n');
