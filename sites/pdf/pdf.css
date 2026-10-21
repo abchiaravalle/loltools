@@ -57,12 +57,13 @@ body[data-tool="topdf"] .tool-nav a[data-tool="topdf"] {
 }
 .overlay img { display: block; width: 100%; height: 100%; pointer-events: none; }
 .overlay .ov-del, .overlay .ov-size {
-  position: absolute; width: 26px; height: 26px; border-radius: 50%;
-  display: grid; place-items: center; font-size: 13px; line-height: 1;
+  position: absolute; width: 24px; height: 24px; border-radius: 50%;
+  display: grid; place-items: center; font-size: 12px; line-height: 1;
   background: var(--accent); color: #fff; border: 2px solid #fff; padding: 0;
 }
-.overlay .ov-del { top: -13px; right: -13px; cursor: pointer; }
-.overlay .ov-size { bottom: -13px; right: -13px; cursor: nwse-resize; touch-action: none; }
+/* Opposite corners, so they never stack on a short stamp like a date. */
+.overlay .ov-del { top: -12px; left: -12px; cursor: pointer; }
+.overlay .ov-size { bottom: -12px; right: -12px; cursor: nwse-resize; touch-action: none; }
 .overlay.text-ov { min-width: 40px; }
 .overlay.text-ov .ov-text {
   display: block; width: 100%; height: 100%; padding: 0 2px;
