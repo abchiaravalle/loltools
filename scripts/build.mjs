@@ -206,6 +206,10 @@ function headersFile(site, sj, csp) {
     '  Referrer-Policy: no-referrer',
     '  Permissions-Policy: camera=(), microphone=(), geolocation=(), interest-cohort=()',
     `  Content-Security-Policy: ${csp}; frame-ancestors 'none'`,
+    // no-transform stops Cloudflare from rewriting our HTML. Without it, the
+    // zone's automatic Web Analytics setting injects a third-party beacon
+    // script (found on the live hosts 2026-10-20; pages.dev was clean).
+    '  Cache-Control: public, max-age=0, must-revalidate, no-transform',
   ];
   for (const [k, v] of Object.entries(sj.headers || {})) lines.push(`  ${k}: ${v}`);
   if (!site.live) lines.push('  X-Robots-Tag: noindex, nofollow');
