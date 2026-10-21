@@ -75,7 +75,7 @@ function peakHz(file) {
   ok('fetch("https://example.com/") from the page is blocked', exampleBlocked);
   const cspMeta = await page.getAttribute('meta[http-equiv="Content-Security-Policy"]', 'content');
   ok('CSP: connect-src none, no unsafe-eval', /connect-src 'none'/.test(cspMeta) && !/'unsafe-eval'/.test(cspMeta), cspMeta.match(/script-src[^;]*/)[0]);
-  const rawHtml = await new Promise((res, rej) => require('http').get(base, (r) => { let d = ''; r.on('data', (c) => { d += c; }); r.on('end', () => res(d)); }).on('error', rej));
+  const rawHtml = await new Promise((res, rej) => require(base.startsWith('https') ? 'https' : 'http').get(base, { headers: { 'User-Agent': 'Mozilla/5.0 (Macintosh) Chrome/130.0 Safari/537.36' } }, (r) => { let d = ''; r.on('data', (c) => { d += c; }); r.on('end', () => res(d)); }).on('error', rej));
   const top = rawHtml.slice(0, rawHtml.indexOf('<html'));
   ok('view-source comment lists what loads and says nothing is uploaded', /never uploaded/.test(top) && /lame-mp3-wasm\.js/.test(top) && /connect-src 'none'/.test(top));
 
@@ -337,7 +337,7 @@ function peakHz(file) {
   await browser.close();
 
   // ---- Credits: every vendored file is credited and its licence text is served ----
-  const get = (u) => new Promise((res, rej) => require('http').get(new URL(u, base), (r) => { let d = ''; r.on('data', (c) => { d += c; }); r.on('end', () => res({ status: r.statusCode, body: d })); }).on('error', rej));
+  const get = (u) => new Promise((res, rej) => require(base.startsWith('https') ? 'https' : 'http').get(new URL(u, base), { headers: { 'User-Agent': 'Mozilla/5.0 (Macintosh) Chrome/130.0 Safari/537.36' } }, (r) => { let d = ''; r.on('data', (c) => { d += c; }); r.on('end', () => res({ status: r.statusCode, body: d })); }).on('error', rej));
   const lic = await get('/licenses/');
   const vendored = fs.readdirSync(path.join(ROOT, 'sites/video/vendor')).filter((f) => /\.js$/.test(f));
   const missing = vendored.filter((f) => !lic.body.includes(`/vendor/${f}`));
