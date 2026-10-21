@@ -1,0 +1,239 @@
+<!doctype html>
+<!--
+  colorpicker.lol. View source. Everything happens in your browser.
+
+  Network activity: the page loads its own files from this domain
+  (index.html, lol.css, lol.js, color.css, colormath.js, app.js and
+  palette-worker.js). After that the page's Content-Security-Policy sets
+  connect-src 'none', so the browser blocks every fetch, XHR, beacon or
+  WebSocket, ours included. Images you drop in are read inside this tab and
+  never leave your device. There are no third-party libraries.
+
+  Your recent picks are saved in localStorage on this device so they survive a
+  reload. The Clear button deletes them. Your light/dark choice is saved the
+  same way. No analytics, no cookies, no ads.
+
+  Source: https://github.com/abchiaravalle/loltools
+-->
+<html lang="en">
+<head>
+  <!--@head-->
+  <link rel="stylesheet" href="/color.css?v={{BUILD_DATE}}">
+</head>
+<body>
+  <div class="container">
+    <!--@header-->
+
+    <main>
+      <section class="hero">
+        <h1>Pick any color, get its code</h1>
+        <p class="lede">Grab a color from your screen or a photo, copy it as HEX, RGB, HSL or CMYK, and check that text on it is easy to read. Your images stay on your device.</p>
+      </section>
+
+      <section class="card" aria-labelledby="tool-heading">
+        <h2 id="tool-heading">Your color</h2>
+
+        <div class="cp-top">
+          <div class="cp-swatch" aria-hidden="true"><span id="swatch"></span></div>
+          <div class="cp-controls">
+            <div class="field">
+              <label for="colorInput">Type or paste a color</label>
+              <div class="cp-inputrow">
+                <input type="text" id="colorInput" spellcheck="false" autocomplete="off" autocapitalize="off" inputmode="text" placeholder="#336699, rgb(51 102 153), teal" aria-describedby="inputMsg">
+                <input type="color" id="nativePicker" aria-label="Open your browser's color picker" title="Open your browser's color picker">
+              </div>
+              <p class="hint cp-msg" id="inputMsg" aria-live="polite"></p>
+            </div>
+            <div class="cp-screen">
+              <button class="btn-primary" type="button" id="screenBtn" hidden>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m2 22 1-1h3l9-9"/><path d="M3 21v-3l9-9"/><path d="m15 6 3.4-3.4a2.1 2.1 0 1 1 3 3L18 9l.4.4a2.1 2.1 0 1 1-3 3l-3.8-3.8a2.1 2.1 0 1 1 3-3l.4.4Z"/></svg>
+                Pick from screen
+              </button>
+              <p class="hint" id="screenNote" hidden>Picking from anywhere on your screen only works in Chrome, Edge and Opera on a computer. You can still take a screenshot and drop it in below.</p>
+            </div>
+          </div>
+        </div>
+
+        <p class="cp-name" id="colorName" aria-live="polite"></p>
+
+        <ul class="formats" id="formats" aria-label="Color codes. Click one to copy it.">
+          <li><button type="button" class="fmt-row" data-fmt="hex"><span class="fmt-label">HEX</span><code class="fmt-value" id="v-hex"></code><span class="fmt-copy">Copy</span></button></li>
+          <li><button type="button" class="fmt-row" data-fmt="rgb"><span class="fmt-label">RGB</span><code class="fmt-value" id="v-rgb"></code><span class="fmt-copy">Copy</span></button></li>
+          <li><button type="button" class="fmt-row" data-fmt="hsl"><span class="fmt-label">HSL</span><code class="fmt-value" id="v-hsl"></code><span class="fmt-copy">Copy</span></button></li>
+          <li><button type="button" class="fmt-row" data-fmt="hsv"><span class="fmt-label">HSV / HSB</span><code class="fmt-value" id="v-hsv"></code><span class="fmt-copy">Copy</span></button></li>
+          <li><button type="button" class="fmt-row" data-fmt="cmyk"><span class="fmt-label">CMYK*</span><code class="fmt-value" id="v-cmyk"></code><span class="fmt-copy">Copy</span></button></li>
+          <li><button type="button" class="fmt-row" data-fmt="oklch"><span class="fmt-label">OKLCH</span><code class="fmt-value" id="v-oklch"></code><span class="fmt-copy">Copy</span></button></li>
+        </ul>
+        <p class="hint cp-foot">* CMYK here is a simple screen-to-print estimate, not a conversion with a printer's color profile. Ask your print shop for exact numbers.</p>
+        <p class="sr-only" id="announce" role="status" aria-live="polite"></p>
+      </section>
+
+      <section class="card" aria-labelledby="image-heading">
+        <h2 id="image-heading">Pick from an image</h2>
+        <label class="dropzone" id="drop">
+          <svg class="dz-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.09-3.09a2 2 0 0 0-2.82 0L6 21"/></svg>
+          <span class="dz-title" id="dzTitle">Drop an image here, click to pick one, or paste a screenshot</span>
+          <span class="dz-sub">PNG, JPG, WebP, GIF, AVIF, SVG or BMP</span>
+          <input type="file" id="fileInput" accept="image/*">
+        </label>
+
+        <div class="stage-wrap" id="stageWrap" hidden>
+          <div class="stage" id="stage">
+            <canvas id="imgCanvas" tabindex="0" aria-describedby="stageHint" aria-label="Your image. Click a spot to pick its color, or use the arrow keys and press Enter."></canvas>
+            <span class="pick-marker" id="marker" hidden></span>
+            <div class="loupe" id="loupe" hidden aria-hidden="true">
+              <canvas id="loupeCanvas"></canvas>
+              <span class="loupe-label" id="loupeLabel"></span>
+            </div>
+          </div>
+          <p class="hint stage-hint" id="stageHint">Click a spot to pick its color. Hover to zoom in. Arrow keys move one pixel, Enter picks.</p>
+          <div class="picked" id="picked" hidden>
+            <span class="picked-swatch" id="pickedSwatch"></span>
+            <code id="pickedHex"></code>
+            <button type="button" class="mini-btn" id="pickedCopy">Copy</button>
+            <span class="hint" id="pickedAt"></span>
+          </div>
+        </div>
+        <p class="status" id="imgStatus" role="status" aria-live="polite"></p>
+      </section>
+
+      <section class="card" aria-labelledby="palette-heading">
+        <h2 id="palette-heading">Palette</h2>
+
+        <div class="pal-block">
+          <div class="pal-head">
+            <span class="pal-title" id="palLabel">Main colors in your image</span>
+            <div class="segmented" role="radiogroup" aria-labelledby="palLabel">
+              <input type="radio" name="k" id="k5" value="5"><label for="k5">5</label>
+              <input type="radio" name="k" id="k6" value="6" checked><label for="k6">6</label>
+              <input type="radio" name="k" id="k7" value="7"><label for="k7">7</label>
+              <input type="radio" name="k" id="k8" value="8"><label for="k8">8</label>
+            </div>
+          </div>
+          <ul class="swatches" id="palette" aria-label="Main colors. Click one to use it."></ul>
+          <p class="hint" id="paletteEmpty">Add an image above and its main colors show up here.</p>
+          <div class="actions pal-actions">
+            <button class="btn-ghost" type="button" id="copyCss" disabled>Copy as CSS variables</button>
+            <button class="btn-ghost" type="button" id="copyHex" disabled>Copy HEX list</button>
+          </div>
+        </div>
+
+        <div class="pal-block">
+          <div class="pal-head">
+            <span class="pal-title">Recent picks</span>
+            <span class="hint">Saved in this browser, on this device only</span>
+          </div>
+          <ul class="swatches" id="recent" aria-label="Recent picks. Click one to use it again."></ul>
+          <p class="hint" id="recentEmpty">Colors you pick or type show up here.</p>
+          <div class="actions pal-actions">
+            <button class="btn-ghost" type="button" id="copyRecent" disabled>Copy HEX list</button>
+            <button class="btn-ghost" type="button" id="clearRecent" disabled>Clear</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="card" aria-labelledby="contrast-heading">
+        <h2 id="contrast-heading">Is text readable on it?</h2>
+
+        <div class="qc-grid">
+          <div class="qc" id="qcWhite"><span class="qc-sample">Aa White text</span><span class="qc-ratio"></span></div>
+          <div class="qc" id="qcBlack"><span class="qc-sample">Aa Black text</span><span class="qc-ratio"></span></div>
+        </div>
+
+        <div class="pair">
+          <div class="field">
+            <span class="label" id="roleLabel">Your color is the</span>
+            <div class="segmented" role="radiogroup" aria-labelledby="roleLabel">
+              <input type="radio" name="role" id="role-text" value="text" checked><label for="role-text">Text</label>
+              <input type="radio" name="role" id="role-bg" value="bg"><label for="role-bg">Background</label>
+            </div>
+          </div>
+          <div class="field">
+            <label for="otherInput" id="otherLabel">Background color</label>
+            <div class="cp-inputrow">
+              <input type="text" id="otherInput" value="#ffffff" spellcheck="false" autocomplete="off" autocapitalize="off">
+              <input type="color" id="otherPicker" value="#ffffff" aria-label="Open your browser's color picker for the second color">
+            </div>
+            <p class="hint cp-msg" id="otherMsg" aria-live="polite"></p>
+          </div>
+        </div>
+
+        <div class="sample" id="sample">
+          <p class="s-normal">Normal text: the quick brown fox jumps over the lazy dog.</p>
+          <p class="s-large">Large text: pack my box with five dozen jugs.</p>
+        </div>
+
+        <p class="ratio"><span id="ratio">0</span><span class="ratio-unit">:1</span> <span class="ratio-word" id="ratioWord"></span></p>
+
+        <table class="wcag">
+          <thead><tr><th scope="col"><span class="sr-only">Level</span></th><th scope="col">Normal text</th><th scope="col">Large text</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">AA</th><td id="aaNormal"></td><td id="aaLarge"></td></tr>
+            <tr><th scope="row">AAA</th><td id="aaaNormal"></td><td id="aaaLarge"></td></tr>
+          </tbody>
+        </table>
+        <p class="hint wcag-foot">Uses the WCAG 2 contrast formula. AA needs 4.5:1 for normal text and 3:1 for large text (24px, or 19px bold). AAA needs 7:1 and 4.5:1. Icons and input borders need 3:1: <strong id="uiVerdict"></strong>.</p>
+        <p class="hint wcag-foot" id="alphaNote" hidden>Your color is see-through, so it's checked as it looks laid over the background.</p>
+      </section>
+
+      <section class="card privacy-card" aria-labelledby="privacy-heading">
+        <h2 id="privacy-heading">How your images stay private</h2>
+        <ul class="privacy-grid">
+          <li>
+            <svg class="pg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
+            <div><span class="pg-title">No upload</span><span class="pg-desc">Your image is opened and read inside this tab. It isn't sent to us or to anyone else.</span></div>
+          </li>
+          <li>
+            <svg class="pg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <div><span class="pg-title">Uploads are blocked</span><span class="pg-desc">The page's security policy sets <code>connect-src 'none'</code>, so your browser won't let this page send anything anywhere.</span></div>
+          </li>
+          <li>
+            <svg class="pg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="14" rx="2"/><path d="M8 22h8M12 18v4"/></svg>
+            <div><span class="pg-title">Recent picks stay here</span><span class="pg-desc">Your recent colors are saved in this browser on this device, and nowhere else. Clear deletes them.</span></div>
+          </li>
+          <li>
+            <svg class="pg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
+            <div><span class="pg-title">No analytics or cookies</span><span class="pg-desc">No tracking scripts, no ads, no account. Our host, Cloudflare, keeps standard logs of page visits, like it does for every site. Your images and colors aren't in them.</span></div>
+          </li>
+        </ul>
+        <p class="privacy-cta">Read every line on <a href="https://github.com/abchiaravalle/loltools">GitHub</a>. There are no third-party libraries, just our own plain JavaScript.</p>
+      </section>
+
+      <section class="card faq" aria-labelledby="faq-heading">
+        <h2 id="faq-heading">Questions</h2>
+        <details>
+          <summary>Why don't I see "Pick from screen"?</summary>
+          <p>It uses a browser feature that only Chrome, Edge and Opera on a computer have right now. Safari, Firefox and phone browsers don't offer it. Take a screenshot instead and drop or paste it into "Pick from an image".</p>
+        </details>
+        <details>
+          <summary>Why is my color a little different from another app?</summary>
+          <p>Before reading a pixel, your browser converts the image to sRGB, the color space web pages use, so the code you copy shows the same color in CSS. iPhone photos and Mac screenshots often use a wider space called Display P3, and very vivid colors from them get pulled to the nearest sRGB color. JPG compression also nudges pixels, so zoom in and pick from a flat area.</p>
+        </details>
+        <details>
+          <summary>Can I send the CMYK numbers to a printer?</summary>
+          <p>Use them as a rough starting point only. They come from a simple formula. Real print colors depend on the paper, the ink and the printer's color profile, so your print shop or a design app with their profile will give different, better numbers.</p>
+        </details>
+        <details>
+          <summary>What do AA and AAA mean?</summary>
+          <p>They're the pass levels in WCAG 2, the accessibility guidelines most audits and laws point to. AA is the usual target: 4.5:1 for normal text and 3:1 for large text. AAA is stricter: 7:1 and 4.5:1. The check here follows the WCAG 2 formula exactly. Newer methods like APCA give different numbers.</p>
+        </details>
+        <details>
+          <summary>Where are my recent colors saved?</summary>
+          <p>In this browser's local storage, on this device only. They don't sync to your other devices and they're never sent anywhere. Press Clear to delete them. Clearing this site's data in your browser settings does the same.</p>
+        </details>
+        <details>
+          <summary>Big photos look soft on my phone. Why?</summary>
+          <p>To stay inside what phone browsers can handle, photos over 16 megapixels are scaled down on phones (over 50 megapixels on computers) before you pick. That can blend tiny details. Crop the photo or use a screenshot if you need an exact pixel. HEIC photos only open in Safari. In other browsers, turn them into JPGs first, for example with heic.lol, which also works without uploading.</p>
+        </details>
+      </section>
+
+      <!--@more-->
+    </main>
+
+    <!--@footer-->
+  </div>
+
+  <script src="/colormath.js?v={{BUILD_DATE}}"></script>
+  <script src="/app.js?v={{BUILD_DATE}}"></script>
+</body>
+</html>
