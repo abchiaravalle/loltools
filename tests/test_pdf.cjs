@@ -2,7 +2,7 @@
 const { chromium } = require('playwright');
 const fs = require('fs');
 const { execSync } = require('child_process');
-const F = process.env.FIXTURES || '/tmp/loltest/fixtures/';
+const F = '/tmp/loltest/fixtures/';
 const OUT = '/tmp/loltest/out/pdf/';
 fs.mkdirSync(OUT, { recursive: true });
 const base = process.argv[2];
@@ -57,7 +57,7 @@ function gsClean(f) { try { execSync(`gs -q -dNOPAUSE -dBATCH -sDEVICE=nullpage 
   ok('merge: locked PDF gets a plain message', /password/i.test(lockedMsg), lockedMsg);
 
   // ---- COMPRESS
-  await page.click('label[for=mode-compress]');
+  await page.goto(base.replace(/\/$/, '') + '/compress/', { waitUntil: 'load' });
   const sizes = [];
   const comp = ['scan.pdf', 'real-2019-Bilsing-CF-brochure-web.pdf', 'real-COBOT-KIT-User-Manual-2021.pdf', 'real-BIL_FlyerA4_Toolingsystem_2017-05-23_v5_ENG.pdf', 'real-2020-Bilsing-CF-T-Beam-brochure-A4-SEP20_Spanish-1.pdf', 'real-marketmap.pdf', 'a.pdf'];
   await page.setInputFiles('#compressInput', comp.map((x) => F + x));
@@ -95,7 +95,8 @@ function gsClean(f) { try { execSync(`gs -q -dNOPAUSE -dBATCH -sDEVICE=nullpage 
   ok('compress: every file without a download says keep the original', noBtn.every((m) => /Keep your original/.test(m[1])), noBtn.map((m) => m[0] + ': ' + m[1]).join(' | ') || 'none');
 
   // ---- Network: after load, zero requests
-  ok('no network requests after page load', requests.length === loadReqs, `${loadReqs} at load, ${requests.length} total`);
+  const foreign = requests.filter((u) => !(u.startsWith(base.replace(/\/$/, '')) || u.startsWith('blob:') || u.startsWith('data:')));
+  ok('every request is to this site only (2 page loads)', foreign.length === 0, `${requests.length} requests; foreign: ${foreign.join(', ') || 'none'}`);
   ok('all load requests same-origin', requests.every((u) => u.startsWith(base) || u.startsWith('blob:') || u.startsWith('data:')), requests.filter((u) => !u.startsWith(base)).join(', '));
   ok('no page errors', errors.length === 0, errors.join(' | '));
   ok('no CSP violations', cspViolations.length === 0, cspViolations.join(' | '));

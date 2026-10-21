@@ -14,15 +14,10 @@
   const N = (s) => PDFName.of(s);
 
   // ---------------------------------------------------------------------------
-  // Mode switch
+  // Which tool is showing comes from the page (body[data-tool]); old #compress links still work.
   // ---------------------------------------------------------------------------
-  const panels = { merge: document.getElementById('panel-merge'), compress: document.getElementById('panel-compress') };
-  document.querySelectorAll('input[name="mode"]').forEach((r) => r.addEventListener('change', () => {
-    for (const k in panels) panels[k].hidden = k !== r.value;
-  }));
-  if (location.hash === '#compress') {
-    document.getElementById('mode-compress').checked = true;
-    panels.merge.hidden = true; panels.compress.hidden = false;
+  if (location.hash === '#compress' && document.body.dataset.tool === 'merge') {
+    location.replace('/compress/');
   }
 
   const isPdf = (f) => f.type === 'application/pdf' || /\.pdf$/i.test(f.name);

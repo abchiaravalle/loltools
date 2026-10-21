@@ -1,0 +1,122 @@
+/* pdf.lol page styles (on top of lol.css). */
+
+/* Only the current tool's panel shows. */
+.tool-panel { display: none; }
+body[data-tool="merge"] #panel-merge,
+body[data-tool="compress"] #panel-compress,
+body[data-tool="sign"] #panel-sign,
+body[data-tool="split"] #panel-split,
+body[data-tool="tojpg"] #panel-tojpg,
+body[data-tool="topdf"] #panel-topdf { display: block; }
+
+.tool-nav {
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 0.4rem;
+  margin: -0.75rem auto 1.5rem;
+}
+.tool-nav a {
+  font-family: var(--font-mono); font-size: 0.85rem; text-decoration: none;
+  color: var(--fg-muted); padding: 0.45rem 0.85rem;
+  border: 1px solid var(--border); border-radius: 999px;
+  transition: color .15s ease, border-color .15s ease, background-color .15s ease;
+}
+.tool-nav a:hover { color: var(--fg); border-color: var(--fg-muted); }
+body[data-tool="merge"] .tool-nav a[data-tool="merge"],
+body[data-tool="compress"] .tool-nav a[data-tool="compress"],
+body[data-tool="sign"] .tool-nav a[data-tool="sign"],
+body[data-tool="split"] .tool-nav a[data-tool="split"],
+body[data-tool="tojpg"] .tool-nav a[data-tool="tojpg"],
+body[data-tool="topdf"] .tool-nav a[data-tool="topdf"] {
+  background: var(--accent); border-color: var(--accent); color: #fff;
+}
+
+.check-row { display: flex; gap: .55rem; align-items: flex-start; cursor: pointer; }
+.check-row input { margin-top: .25rem; accent-color: var(--accent); }
+
+.btn-ghost.sm { padding: 0.5rem 0.9rem; font-size: 0.9rem; }
+
+/* ---------- Sign ---------- */
+.sign-toolbar { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.75rem; }
+.sign-toolbar .btn-ghost.armed { color: #fff; background: var(--accent); border-color: var(--accent); }
+#signHint { margin-bottom: 1rem; }
+.sign-pages { display: grid; gap: 1rem; justify-items: center; }
+.sign-page {
+  position: relative; max-width: 100%;
+  box-shadow: 0 1px 0 var(--border), 0 0 0 1px var(--border);
+  background: #fff; touch-action: pan-y;
+}
+.sign-page.placing { cursor: crosshair; }
+.sign-page canvas { display: block; width: 100%; height: auto; }
+.sign-page .pg-num {
+  position: absolute; top: 0.4rem; left: 0.4rem;
+  font-family: var(--font-mono); font-size: 0.72rem; color: #475569;
+  background: #ffffffd9; padding: 0.1rem 0.4rem; border-radius: 4px; pointer-events: none;
+}
+.overlay {
+  position: absolute; border: 1.5px dashed var(--accent); border-radius: 3px;
+  cursor: move; touch-action: none; user-select: none;
+}
+.overlay img { display: block; width: 100%; height: 100%; pointer-events: none; }
+.overlay .ov-del, .overlay .ov-size {
+  position: absolute; width: 26px; height: 26px; border-radius: 50%;
+  display: grid; place-items: center; font-size: 13px; line-height: 1;
+  background: var(--accent); color: #fff; border: 2px solid #fff; padding: 0;
+}
+.overlay .ov-del { top: -13px; right: -13px; cursor: pointer; }
+.overlay .ov-size { bottom: -13px; right: -13px; cursor: nwse-resize; touch-action: none; }
+.overlay.text-ov { min-width: 40px; }
+.overlay.text-ov .ov-text {
+  display: block; width: 100%; height: 100%; padding: 0 2px;
+  font-family: Helvetica, Arial, sans-serif; color: #111; line-height: 1.15;
+  background: transparent; border: 0; outline: none; resize: none; overflow: hidden; white-space: pre;
+  cursor: text;
+}
+
+.sig-dialog {
+  border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--bg-card); color: var(--fg);
+  padding: 1.25rem; width: min(640px, calc(100vw - 2rem)); max-width: none;
+}
+.sig-dialog::backdrop { background: #0008; }
+.sig-form { display: grid; gap: 1rem; }
+.sig-form h3 { margin: 0; font-size: 1.05rem; }
+.sig-pad-wrap { position: relative; }
+.sig-pad {
+  display: block; width: 100%; height: auto; aspect-ratio: 3 / 1;
+  background: #fff; border: 1px solid var(--border); border-radius: var(--radius-sm);
+  touch-action: none; cursor: crosshair;
+}
+.sig-line {
+  position: absolute; left: 6%; right: 6%; bottom: 24%;
+  border-bottom: 1px solid #cbd5e1; pointer-events: none;
+}
+#sigTyped { margin-top: 0.5rem; cursor: default; }
+.sig-colors { display: flex; gap: 0.6rem; }
+.sig-colors input { position: absolute; opacity: 0; pointer-events: none; }
+.ink-dot {
+  width: 30px; height: 30px; border-radius: 50%; background: var(--ink);
+  border: 2px solid var(--border); cursor: pointer;
+}
+.sig-colors input:checked + .ink-dot { outline: 2px solid var(--accent); outline-offset: 2px; }
+.sig-colors input:focus-visible + .ink-dot { outline: 2px solid var(--accent); outline-offset: 4px; }
+
+/* ---------- Split thumbnails ---------- */
+.thumb-grid {
+  display: grid; gap: 0.75rem; margin-top: 1.25rem;
+  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+}
+.thumb {
+  position: relative; display: grid; gap: 0.3rem; justify-items: center;
+  padding: 0.5rem; border-radius: var(--radius-sm);
+  background: var(--bg-input); border: 1.5px solid var(--border);
+  cursor: pointer; font: inherit; color: inherit;
+}
+.thumb:hover { border-color: var(--fg-muted); }
+.thumb canvas { display: block; max-width: 100%; height: auto; background: #fff; box-shadow: 0 0 0 1px var(--border); }
+.thumb .t-num { font-family: var(--font-mono); font-size: 0.75rem; color: var(--fg-muted); }
+.thumb[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-dim); }
+.thumb[aria-pressed="true"] .t-num { color: var(--accent); font-weight: 600; }
+.thumb .t-part {
+  position: absolute; top: 0.3rem; right: 0.3rem; font-family: var(--font-mono); font-size: 0.68rem;
+  padding: 0.05rem 0.35rem; border-radius: 4px; background: var(--accent); color: #fff;
+}
+.thumb-grid.readonly .thumb { cursor: default; }

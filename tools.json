@@ -11,7 +11,10 @@
       "blurb": "Merge, split, sign and convert PDFs",
       "title": "Merge and compress PDFs without uploading them · pdf.lol",
       "description": "Combine PDFs or shrink a PDF right in your browser. Your files never leave your device. No signup, no watermark, no daily limit.",
-      "vendor": ["pdf-lib.min.js"]
+      "vendor": [
+        "pdf-lib.min.js",
+        "fflate.min.js"
+      ]
     },
     "qr": {
       "name": "qr-code.lol",
@@ -23,7 +26,10 @@
       "blurb": "QR codes that don't expire",
       "title": "Free QR code generator, codes never expire · qr-code.lol",
       "description": "Make a QR code for a link, Wi-Fi, contact card, email or phone number. No signup, no scan tracking, and no redirect service that can shut your code off.",
-      "vendor": ["qrcode-generator.js", "jsqr.js"]
+      "vendor": [
+        "qrcode-generator.js",
+        "jsqr.js"
+      ]
     },
     "heic": {
       "name": "heic.lol",
@@ -35,7 +41,10 @@
       "blurb": "HEIC photos to JPG",
       "title": "Convert HEIC to JPG in your browser, no upload · heic.lol",
       "description": "Turn iPhone HEIC photos into JPG or PNG on your own device. Convert a batch, download a ZIP, and the copies don't carry your photo's location.",
-      "vendor": ["heic-to.min.js", "fflate.min.js"]
+      "vendor": [
+        "heic-to.min.js",
+        "fflate.min.js"
+      ]
     },
     "nobg": {
       "name": "nobg.lol",
@@ -111,6 +120,10 @@
     }
   },
   "extra_links": [
-    { "name": "findmyip.lol", "url": "https://findmyip.lol/", "blurb": "Your IP address, no tracking" }
+    {
+      "name": "findmyip.lol",
+      "url": "https://findmyip.lol/",
+      "blurb": "Your IP address, no tracking"
+    }
   ]
 }

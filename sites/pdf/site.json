@@ -1,0 +1,60 @@
+{
+  "csp": {
+    "script-src": "'self' 'wasm-unsafe-eval'",
+    "connect-src": "'self'"
+  },
+  "credits": [
+    {
+      "name": "PDF.js 6.4.299 (Mozilla), with its OpenJPEG, JBIG2 and QCMS decoders",
+      "license": "Apache-2.0 (decoders: see their licence files)",
+      "url": "https://github.com/mozilla/pdf.js",
+      "file": "/vendor/pdfjs/",
+      "licenseFile": "/vendor/licenses/pdfjs.LICENSE",
+      "note": "Used to draw PDF pages as images and thumbnails."
+    },
+    {
+      "name": "Liberation fonts and Foxit fonts (shipped with PDF.js)",
+      "license": "SIL OFL 1.1 / BSD",
+      "url": "https://github.com/mozilla/pdf.js/tree/master/external/standard_fonts",
+      "file": "/vendor/pdfjs/standard_fonts/",
+      "licenseFile": "/vendor/pdfjs/standard_fonts/LICENSE_LIBERATION"
+    }
+  ],
+  "vars": {
+    "TOOL": "merge",
+    "H1": "Merge and shrink PDFs without uploading them",
+    "LEDE": "Your files stay on your device. pdf.lol does the work inside this browser tab, so there's no upload, no account and no watermark."
+  },
+  "pages": [
+    {
+      "path": "compress/",
+      "title": "Compress a PDF without uploading it · pdf.lol",
+      "description": "Shrink a PDF's photos and scans right in your browser. The file never leaves your device. No signup, no watermark, no daily limit.",
+      "vars": { "TOOL": "compress", "H1": "Make a PDF smaller without uploading it", "LEDE": "pdf.lol shrinks the photos and scans inside your PDF, right in this browser tab. Text stays sharp and the file never leaves your device." }
+    },
+    {
+      "path": "sign/",
+      "title": "Sign a PDF for free, no upload · pdf.lol",
+      "description": "Draw or type your signature and place it on a PDF, right in your browser. No account, no upload, no watermark.",
+      "vars": { "TOOL": "sign", "H1": "Sign a PDF without uploading it", "LEDE": "Draw or type your signature, drag it where it goes, and download. The PDF and your signature never leave this device." }
+    },
+    {
+      "path": "split/",
+      "title": "Split a PDF or pull out pages, no upload · pdf.lol",
+      "description": "Pick pages or ranges and save them as separate PDFs, right in your browser. Your file never leaves your device.",
+      "vars": { "TOOL": "split", "H1": "Split a PDF without uploading it", "LEDE": "Pull out the pages you need, or break a PDF into pieces. Everything happens in this browser tab." }
+    },
+    {
+      "path": "pdf-to-jpg/",
+      "title": "PDF to JPG: turn pages into images, no upload · pdf.lol",
+      "description": "Save every page of a PDF as a JPG or PNG image, right in your browser. Pick the quality, download one page or a ZIP of all of them.",
+      "vars": { "TOOL": "tojpg", "H1": "Turn PDF pages into JPG images", "LEDE": "Each page becomes its own image, made in this browser tab. Your PDF is never uploaded." }
+    },
+    {
+      "path": "jpg-to-pdf/",
+      "title": "JPG to PDF: combine images into one PDF, no upload · pdf.lol",
+      "description": "Turn JPG, PNG or WebP images into a single PDF, right in your browser. Reorder them, pick a page size, and download. No upload.",
+      "vars": { "TOOL": "topdf", "H1": "Turn images into one PDF", "LEDE": "Drop in photos or scans, put them in order, and get a single PDF. Nothing gets uploaded." }
+    }
+  ]
+}
