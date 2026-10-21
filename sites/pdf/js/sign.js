@@ -120,7 +120,9 @@
     return out;
   }
 
-  $('sigUse').addEventListener('click', async () => {
+  $('sigUse').addEventListener('click', () => {
+    // Everything here runs synchronously, so the very next tap on a page places
+    // the signature. (An earlier async version ignored a fast first tap.)
     // Re-render at 2x for a crisp stamp.
     const src = sigMode() === 'type' ? typed : pad;
     const big = document.createElement('canvas');
@@ -140,10 +142,12 @@
     }
     const trimmed = trimCanvas(big);
     if (!trimmed) { lol.setStatus(statusEl, sigMode() === 'type' ? 'Type your name first.' : 'Draw your signature in the box first.', 'err'); return; }
-    const blob = await new Promise((r) => trimmed.toBlob(r, 'image/png'));
-    state.sigPng = new Uint8Array(await blob.arrayBuffer());
-    state.sigUrl && URL.revokeObjectURL(state.sigUrl);
-    state.sigUrl = URL.createObjectURL(blob);
+    const dataUrl = trimmed.toDataURL('image/png');
+    const bin = atob(dataUrl.slice(dataUrl.indexOf(',') + 1));
+    const png = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) png[i] = bin.charCodeAt(i);
+    state.sigPng = png;
+    state.sigUrl = dataUrl;
     state.sigAspect = trimmed.width / trimmed.height;
     dialog.close();
     $('sigCreateLabel').textContent = 'Change signature';

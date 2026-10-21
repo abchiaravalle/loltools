@@ -219,8 +219,8 @@ function netCheck(page, label) {
     for (const p of pts.slice(1)) await page.mouse.move(...p, { steps: 2 });
     await page.mouse.up();
     await page.click('#sigUse');
-    await page.waitForTimeout(300);
-    ok('sign: dialog closes, place button armed', !(await page.evaluate(() => document.getElementById('sigDialog').open)) && await page.evaluate(() => document.getElementById('addSig').classList.contains('armed')));
+    // No wait here on purpose: the very next tap must place the signature.
+    ok('sign: dialog closes, place button armed immediately', !(await page.evaluate(() => document.getElementById('sigDialog').open)) && await page.evaluate(() => document.getElementById('addSig').classList.contains('armed')));
     // Place on each page at a known spot: 25% across, 70% down (as shown on screen)
     const targets = [];
     for (let i = 0; i < 4; i++) {
