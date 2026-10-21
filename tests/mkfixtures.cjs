@@ -1,7 +1,7 @@
 // Build synthetic PDF fixtures with pdf-lib.
 const fs = require('fs');
 const { PDFDocument, StandardFonts, rgb } = require('pdf-lib');
-const F = '/tmp/loltest/fixtures/';
+const F = process.env.FIXTURES || '/tmp/loltest/fixtures/';
 (async () => {
   for (const [name, n] of [['a.pdf', 2], ['b.pdf', 3]]) {
     const d = await PDFDocument.create();

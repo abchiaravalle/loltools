@@ -8,7 +8,7 @@
       "interim": "pdf-lol.amplifi.studio",
       "live": false,
       "emoji": "📄",
-      "blurb": "Merge and compress PDFs",
+      "blurb": "Merge, split, sign and convert PDFs",
       "title": "Merge and compress PDFs without uploading them · pdf.lol",
       "description": "Combine PDFs or shrink a PDF right in your browser. Your files never leave your device. No signup, no watermark, no daily limit.",
       "vendor": ["pdf-lib.min.js"]
@@ -36,6 +36,78 @@
       "title": "Convert HEIC to JPG in your browser, no upload · heic.lol",
       "description": "Turn iPhone HEIC photos into JPG or PNG on your own device. Convert a batch, download a ZIP, and the copies don't carry your photo's location.",
       "vendor": ["heic-to.min.js", "fflate.min.js"]
+    },
+    "nobg": {
+      "name": "nobg.lol",
+      "project": "nobg-lol",
+      "domain": "nobg.lol",
+      "interim": "nobg-lol.amplifi.studio",
+      "live": false,
+      "emoji": "✂️",
+      "blurb": "Remove image backgrounds",
+      "title": "Remove the background from a photo, no upload · nobg.lol",
+      "description": "Cut the background out of a photo right in your browser. The AI model runs on your device, so your picture is never uploaded. No signup, no watermark.",
+      "vendor": []
+    },
+    "ocr": {
+      "name": "imgtotext.lol",
+      "project": "imgtotext-lol",
+      "domain": "imgtotext.lol",
+      "interim": "imgtotext-lol.amplifi.studio",
+      "live": false,
+      "emoji": "🔤",
+      "blurb": "Copy text out of images",
+      "title": "Image to text: copy text from a photo, no upload · imgtotext.lol",
+      "description": "Pull the text out of a photo, screenshot or scan right in your browser. Your image never leaves your device. No signup, no limits.",
+      "vendor": []
+    },
+    "words": {
+      "name": "wordcounter.lol",
+      "project": "wordcounter-lol",
+      "domain": "wordcounter.lol",
+      "interim": "wordcounter-lol.amplifi.studio",
+      "live": false,
+      "emoji": "📝",
+      "blurb": "Count words and characters",
+      "title": "Word counter that never sees your text · wordcounter.lol",
+      "description": "Count words, characters, sentences and reading time as you type. Your text stays in your browser and is never sent anywhere.",
+      "vendor": []
+    },
+    "color": {
+      "name": "colorpicker.lol",
+      "project": "colorpicker-lol",
+      "domain": "colorpicker.lol",
+      "interim": "colorpicker-lol.amplifi.studio",
+      "live": false,
+      "emoji": "🎨",
+      "blurb": "Pick colors from screen or photo",
+      "title": "Color picker: get HEX, RGB and HSL from any image · colorpicker.lol",
+      "description": "Pick a color from your screen or a photo and copy its HEX, RGB, HSL or CMYK code. Check text contrast. Your images never leave your device.",
+      "vendor": []
+    },
+    "pw": {
+      "name": "pwgen.lol",
+      "project": "pwgen-lol",
+      "domain": "pwgen.lol",
+      "interim": "pwgen-lol.amplifi.studio",
+      "live": false,
+      "emoji": "🔑",
+      "blurb": "Strong passwords, made on your device",
+      "title": "Password generator that never sends your password · pwgen.lol",
+      "description": "Make strong random passwords and passphrases with your browser's secure random generator. Nothing is stored or sent anywhere.",
+      "vendor": []
+    },
+    "video": {
+      "name": "vid2gif.lol",
+      "project": "vid2gif-lol",
+      "domain": "vid2gif.lol",
+      "interim": "vid2gif-lol.amplifi.studio",
+      "live": false,
+      "emoji": "🎬",
+      "blurb": "Video to GIF or MP3",
+      "title": "Video to GIF and MP4 to MP3, no upload · vid2gif.lol",
+      "description": "Turn a video clip into a GIF or pull the audio out as an MP3, right in your browser. Your video never leaves your device.",
+      "vendor": []
     }
   },
   "extra_links": [

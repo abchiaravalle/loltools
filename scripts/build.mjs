@@ -5,11 +5,28 @@
     node scripts/build.mjs            # build every site into dist/<site>/
     node scripts/build.mjs pdf qr     # build only some
 
-  Each site is one static folder Cloudflare Pages can serve as-is:
-  index.html + app.js + the shared CSS/JS + only the vendor files it needs.
+  Each site is one static folder Cloudflare Pages can serve as-is.
 
-  A site stays noindex (meta robots + X-Robots-Tag) until tools.json marks
-  it "live": true. That's the launch switch.
+  Inputs per site:
+    tools.json  sites.<key>      identity: name, domain, project, interim host, live switch,
+                                 title/description for the root page, shared vendor files
+    sites/<key>/index.html       page template with <!--@head--> <!--@header--> <!--@more--> <!--@footer-->
+                                 and optional {{VARS}}
+    sites/<key>/site.json        optional per-site build settings (see below)
+    sites/<key>/*                everything else is copied as-is (app.js, css, vendor/, model files...)
+
+  site.json (all fields optional):
+    {
+      "csp":     { "script-src": "'self' 'wasm-unsafe-eval'", "connect-src": "'self'" },  // overrides
+      "headers": { "Cross-Origin-Opener-Policy": "same-origin" },                         // extra headers
+      "vendor":  ["pdf-lib.min.js"],              // files from the shared vendor/ dir
+      "credits": [{ "name": "x 1.0", "license": "MIT", "url": "https://...", "file": "/vendor/x.js",
+                    "licenseFile": "/vendor/licenses/x.LICENSE" }],                   // site-owned libs
+      "vars":    { "H1": "..." },                 // {{VARS}} for the root page
+      "pages":   [{ "path": "split/", "title": "...", "description": "...", "vars": { "H1": "..." } }]
+    }
+
+  A site stays noindex (meta robots + X-Robots-Tag) until tools.json marks it "live": true.
 */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -23,36 +40,52 @@ const read = (p) => fs.readFileSync(path.join(ROOT, p), 'utf8');
 const MARK = read('shared/partials/amplifi-mark.svg').trim();
 const BUILD_DATE = new Date().toISOString().slice(0, 10);
 
-const CSP = [
-  "default-src 'self'",
-  "script-src 'self'",
-  "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob:",
-  "worker-src 'self' blob:",
-  "connect-src 'none'",
-  "font-src 'self'",
-  "object-src 'none'",
-  "base-uri 'none'",
-  "form-action 'none'",
-].join('; ');
+const BASE_CSP = {
+  'default-src': "'self'",
+  'script-src': "'self'",
+  'style-src': "'self' 'unsafe-inline'",
+  'img-src': "'self' data: blob:",
+  'media-src': "'self' blob:",
+  'worker-src': "'self' blob:",
+  'connect-src': "'none'",
+  'font-src': "'self'",
+  'object-src': "'none'",
+  'base-uri': "'none'",
+  'form-action': "'none'",
+};
+
+const SHARED_CREDITS = {
+  'pdf-lib.min.js': ['pdf-lib 1.17.1', 'MIT', 'https://github.com/Hopding/pdf-lib', 'pdf-lib.LICENSE.md'],
+  'qrcode-generator.js': ['qrcode-generator 2.0.4 by Kazuhiko Arase', 'MIT', 'https://github.com/kazuhikoarase/qrcode-generator', 'qrcode-generator.LICENSE'],
+  'jsqr.js': ['jsQR 1.4.0', 'Apache-2.0', 'https://github.com/cozmo/jsQR', 'jsqr.LICENSE'],
+  'heic-to.min.js': ['heic-to 1.6.6 (bundles libheif 1.23.6)', 'LGPL-3.0', 'https://github.com/hoppergee/heic-to', 'heic-to.LICENSE'],
+  'fflate.min.js': ['fflate 0.8.3', 'MIT', 'https://github.com/101arrowz/fflate', 'fflate.LICENSE'],
+};
 
 function esc(s) {
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
+const host = (site) => (site.live ? site.domain : site.interim);
 
-function host(site) {
-  return site.live ? site.domain : site.interim;
+function siteJson(key) {
+  const p = path.join(ROOT, 'sites', key, 'site.json');
+  return fs.existsSync(p) ? JSON.parse(fs.readFileSync(p, 'utf8')) : {};
 }
 
-function head(key, site) {
-  const url = `https://${host(site)}/`;
+function cspString(sj) {
+  const d = { ...BASE_CSP, ...(sj.csp || {}) };
+  return Object.entries(d).map(([k, v]) => `${k} ${v}`).join('; ');
+}
+
+function head(site, page, csp) {
+  const url = `https://${host(site)}/${page.path || ''}`;
   const robots = site.live ? 'index, follow' : 'noindex, nofollow';
   const ld = {
     '@context': 'https://schema.org',
     '@type': 'WebApplication',
-    name: site.name,
+    name: page.appName || site.name,
     url,
-    description: site.description,
+    description: page.description,
     applicationCategory: 'UtilitiesApplication',
     operatingSystem: 'Any (runs in your web browser)',
     isAccessibleForFree: true,
@@ -63,24 +96,24 @@ function head(key, site) {
   return `<meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="color-scheme" content="dark light">
-  <meta http-equiv="Content-Security-Policy" content="${CSP}">
+  <meta http-equiv="Content-Security-Policy" content="${csp}">
   <meta name="referrer" content="no-referrer">
-  <title>${esc(site.title)}</title>
-  <meta name="description" content="${esc(site.description)}">
+  <title>${esc(page.title)}</title>
+  <meta name="description" content="${esc(page.description)}">
   <meta name="robots" content="${robots}">
   <link rel="canonical" href="${url}">
-  <meta property="og:title" content="${esc(site.title)}">
-  <meta property="og:description" content="${esc(site.description)}">
+  <meta property="og:title" content="${esc(page.title)}">
+  <meta property="og:description" content="${esc(page.description)}">
   <meta property="og:type" content="website">
   <meta property="og:url" content="${url}">
   <meta name="twitter:card" content="summary">
   <link rel="icon" href="${esc(favicon)}">
-  <link rel="stylesheet" href="lol.css?v=${BUILD_DATE}">
-  <script src="lol.js?v=${BUILD_DATE}"></script>
+  <link rel="stylesheet" href="/lol.css?v=${BUILD_DATE}">
+  <script src="/lol.js?v=${BUILD_DATE}"></script>
   <script type="application/ld+json">${JSON.stringify(ld)}</script>`;
 }
 
-function header(key, site) {
+function header(site) {
   return `<header class="site-header">
       <a href="/" class="brand" aria-label="${esc(site.name)}, by amplifi.studio">
         ${MARK}
@@ -118,23 +151,28 @@ function moreTools(key) {
 
 function footer() {
   return `<footer class="site-footer">
-      Built with ❤️ by <a href="https://amplifi.studio">amplifi.studio</a> · <a href="licenses/">open-source credits</a>
+      Built with ❤️ by <a href="https://amplifi.studio">amplifi.studio</a> · <a href="/licenses/">open-source credits</a>
     </footer>`;
 }
 
-function licensesPage(key, site, vendorFiles) {
-  const credits = {
-    'pdf-lib.min.js': ['pdf-lib 1.17.1', 'MIT', 'https://github.com/Hopding/pdf-lib', 'pdf-lib.LICENSE.md'],
-    'qrcode-generator.js': ['qrcode-generator 2.0.4 by Kazuhiko Arase', 'MIT', 'https://github.com/kazuhikoarase/qrcode-generator', 'qrcode-generator.LICENSE'],
-    'jsqr.js': ['jsQR 1.4.0', 'Apache-2.0', 'https://github.com/cozmo/jsQR', 'jsqr.LICENSE'],
-    'heic-to.min.js': ['heic-to 1.6.6 (bundles libheif 1.23.6)', 'LGPL-3.0', 'https://github.com/hoppergee/heic-to', 'heic-to.LICENSE'],
-    'fflate.min.js': ['fflate 0.8.3', 'MIT', 'https://github.com/101arrowz/fflate', 'fflate.LICENSE'],
-  };
-  const rows = vendorFiles.map((f) => {
-    const c = credits[f];
-    if (!c) throw new Error('No credit entry for vendor file ' + f);
-    return `<li><strong>${esc(c[0])}</strong>, ${esc(c[1])}. <a href="${c[2]}">Source</a> · <a href="${c[3]}">License text</a> · served here unmodified as <code>/${f}</code></li>`;
-  });
+function creditRows(site, sj) {
+  const rows = [];
+  const vendor = [...(site.vendor || []), ...(sj.vendor || [])];
+  for (const f of vendor) {
+    const c = SHARED_CREDITS[f];
+    if (!c) throw new Error('No credit entry for shared vendor file ' + f);
+    rows.push(`<li><strong>${esc(c[0])}</strong>, ${esc(c[1])}. <a href="${c[2]}">Source</a> · <a href="/licenses/${c[3]}">License text</a> · served here unmodified as <code>/${f}</code></li>`);
+  }
+  for (const c of sj.credits || []) {
+    const lic = c.licenseFile ? ` · <a href="${esc(c.licenseFile)}">License text</a>` : '';
+    const file = c.file ? ` · served from this site as <code>${esc(c.file)}</code>` : '';
+    const note = c.note ? ` ${esc(c.note)}` : '';
+    rows.push(`<li><strong>${esc(c.name)}</strong>, ${esc(c.license)}. <a href="${esc(c.url)}">Source</a>${lic}${file}${note}</li>`);
+  }
+  return rows;
+}
+
+function licensesPage(site, sj) {
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -142,18 +180,18 @@ function licensesPage(key, site, vendorFiles) {
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex">
   <title>Open-source credits · ${esc(site.name)}</title>
-  <link rel="stylesheet" href="../lol.css?v=${BUILD_DATE}">
+  <link rel="stylesheet" href="/lol.css?v=${BUILD_DATE}">
 </head>
 <body>
   <div class="container">
     <section class="card">
       <h2>Open-source credits</h2>
-      <p>${esc(site.name)} runs on these libraries. Each one is copied into this site unmodified, so your browser loads it from us and never from a third-party CDN.</p>
+      <p>${esc(site.name)} runs on these open-source projects. Each one is copied into this site, so your browser loads it from us and never from a third-party CDN.</p>
       <ul>
-        ${rows.join('\n        ')}
+        ${creditRows(site, sj).join('\n        ') || '<li>No third-party libraries. Everything here is our own code.</li>'}
       </ul>
       <p>The site's own code is MIT licensed: <a href="${cfg.repo}">${cfg.repo}</a></p>
-      <p><a href="../">Back to ${esc(site.name)}</a></p>
+      <p><a href="/">Back to ${esc(site.name)}</a></p>
     </section>
   </div>
 </body>
@@ -161,14 +199,15 @@ function licensesPage(key, site, vendorFiles) {
 `;
 }
 
-function headersFile(site) {
+function headersFile(site, sj, csp) {
   const lines = [
     '/*',
     '  X-Content-Type-Options: nosniff',
     '  Referrer-Policy: no-referrer',
     '  Permissions-Policy: camera=(), microphone=(), geolocation=(), interest-cohort=()',
-    `  Content-Security-Policy: ${CSP}; frame-ancestors 'none'`,
+    `  Content-Security-Policy: ${csp}; frame-ancestors 'none'`,
   ];
+  for (const [k, v] of Object.entries(sj.headers || {})) lines.push(`  ${k}: ${v}`);
   if (!site.live) lines.push('  X-Robots-Tag: noindex, nofollow');
   return lines.join('\n') + '\n';
 }
@@ -180,25 +219,20 @@ function robotsFile(site) {
   return s;
 }
 
-function sitemapFile(site) {
+function sitemapFile(site, pages) {
+  const urls = pages.map((p) => `  <url><loc>https://${site.domain}/${p.path || ''}</loc><lastmod>${BUILD_DATE}</lastmod></url>`);
   return `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://${site.domain}/</loc><lastmod>${BUILD_DATE}</lastmod></url>
+${urls.join('\n')}
 </urlset>
 `;
 }
 
-function buildSite(key) {
-  const site = cfg.sites[key];
-  const src = path.join(ROOT, 'sites', key);
-  const out = path.join(ROOT, 'dist', key);
-  fs.rmSync(out, { recursive: true, force: true });
-  fs.mkdirSync(path.join(out, 'licenses'), { recursive: true });
-
-  let html = fs.readFileSync(path.join(src, 'index.html'), 'utf8');
+function render(key, site, sj, template, page, csp) {
+  let html = template;
   const parts = {
-    '<!--@head-->': head(key, site),
-    '<!--@header-->': header(key, site),
+    '<!--@head-->': head(site, page, csp),
+    '<!--@header-->': header(site),
     '<!--@more-->': moreTools(key),
     '<!--@footer-->': footer(),
   };
@@ -206,41 +240,80 @@ function buildSite(key) {
     if (!html.includes(tag)) throw new Error(`${key}/index.html is missing ${tag}`);
     html = html.split(tag).join(val);
   }
-  html = html.replace(/\{\{BUILD_DATE\}\}/g, BUILD_DATE);
+  const vars = { BUILD_DATE, PATH: page.path || '', ...(sj.vars || {}), ...(page.vars || {}) };
+  html = html.replace(/\{\{([A-Z0-9_]+)\}\}/g, (m, k) => {
+    if (!(k in vars)) throw new Error(`${key}/${page.path || ''}: no value for {{${k}}}`);
+    return vars[k];
+  });
   if (/<!--@\w+-->/.test(html)) throw new Error(`${key}: unknown partial ${html.match(/<!--@\w+-->/)[0]}`);
-  fs.writeFileSync(path.join(out, 'index.html'), html);
+  return html;
+}
 
-  // Everything else in the site's own folder (app.js, og.png, ...) copies as-is.
+function checkRefs(key, out, html, pagePath) {
+  const refs = [...html.matchAll(/(?:src|href)="([^"#:?]+)(?:\?[^"]*)?"/g)].map((m) => m[1])
+    .filter((r) => r !== '' && !r.startsWith('data') && !r.startsWith('//'));
+  const missing = refs.filter((r) => {
+    let p = r.startsWith('/') ? path.join(out, r) : path.join(out, pagePath || '', r);
+    if (r.endsWith('/')) p = path.join(p, 'index.html');
+    return !fs.existsSync(p);
+  });
+  if (missing.length) throw new Error(`${key}/${pagePath || ''}: references missing files: ${missing.join(', ')}`);
+}
+
+function buildSite(key) {
+  const site = cfg.sites[key];
+  const sj = siteJson(key);
+  const src = path.join(ROOT, 'sites', key);
+  const out = path.join(ROOT, 'dist', key);
+  fs.rmSync(out, { recursive: true, force: true });
+  fs.mkdirSync(path.join(out, 'licenses'), { recursive: true });
+
+  // Everything in the site's own folder (app.js, css, vendor/, ...) copies as-is.
   for (const f of fs.readdirSync(src)) {
-    if (f === 'index.html') continue;
+    if (f === 'index.html' || f === 'site.json') continue;
     fs.cpSync(path.join(src, f), path.join(out, f), { recursive: true });
   }
   fs.copyFileSync(path.join(ROOT, 'shared/lol.css'), path.join(out, 'lol.css'));
   fs.copyFileSync(path.join(ROOT, 'shared/lol.js'), path.join(out, 'lol.js'));
-
-  for (const v of site.vendor) {
+  for (const v of [...(site.vendor || []), ...(sj.vendor || [])]) {
     fs.copyFileSync(path.join(ROOT, 'vendor', v), path.join(out, v));
   }
   for (const l of fs.readdirSync(path.join(ROOT, 'vendor/licenses'))) {
     fs.copyFileSync(path.join(ROOT, 'vendor/licenses', l), path.join(out, 'licenses', l));
   }
-  fs.writeFileSync(path.join(out, 'licenses/index.html'), licensesPage(key, site, site.vendor));
-  fs.writeFileSync(path.join(out, '_headers'), headersFile(site));
+
+  const csp = cspString(sj);
+  const template = fs.readFileSync(path.join(src, 'index.html'), 'utf8');
+  const pages = [{ path: '', title: site.title, description: site.description }, ...(sj.pages || [])];
+  for (const page of pages) {
+    const html = render(key, site, sj, template, page, csp);
+    const dir = path.join(out, page.path || '');
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(path.join(dir, 'index.html'), html);
+  }
+  fs.writeFileSync(path.join(out, 'licenses/index.html'), licensesPage(site, sj));
+  fs.writeFileSync(path.join(out, '_headers'), headersFile(site, sj, csp));
   fs.writeFileSync(path.join(out, 'robots.txt'), robotsFile(site));
-  if (site.live) fs.writeFileSync(path.join(out, 'sitemap.xml'), sitemapFile(site));
+  if (site.live) fs.writeFileSync(path.join(out, 'sitemap.xml'), sitemapFile(site, pages));
 
-  // Every script/link the page references must exist in the output.
-  const refs = [...html.matchAll(/(?:src|href)="([^"#:?]+)(?:\?[^"]*)?"/g)].map((m) => m[1])
-    .filter((r) => !r.startsWith('/') && !r.startsWith('data') && r !== '' && !r.endsWith('/'));
-  const missing = refs.filter((r) => !fs.existsSync(path.join(out, r)));
-  if (missing.length) throw new Error(`${key}: index.html references missing files: ${missing.join(', ')}`);
+  for (const page of pages) {
+    checkRefs(key, out, fs.readFileSync(path.join(out, page.path || '', 'index.html'), 'utf8'), page.path);
+  }
+  // Pages rejects any single file over 25 MiB.
+  const big = [];
+  const walk = (d) => fs.readdirSync(d, { withFileTypes: true }).forEach((e) => {
+    const p = path.join(d, e.name);
+    if (e.isDirectory()) walk(p); else if (fs.statSync(p).size > 25 * 1024 * 1024) big.push(path.relative(out, p));
+  });
+  walk(out);
+  if (big.length) throw new Error(`${key}: files over Cloudflare Pages' 25 MiB limit: ${big.join(', ')}`);
 
-  const n = fs.readdirSync(out).length;
-  console.log(`built ${key.padEnd(5)} -> dist/${key}/ (${n} entries, ${site.live ? 'INDEXABLE' : 'noindex'}, host ${host(site)})`);
+  console.log(`built ${key.padEnd(6)} -> dist/${key}/ (${pages.length} page${pages.length > 1 ? 's' : ''}, ${site.live ? 'INDEXABLE' : 'noindex'}, host ${host(site)})`);
 }
 
 const keys = only.length ? only : Object.keys(cfg.sites);
 for (const k of keys) {
   if (!cfg.sites[k]) throw new Error('unknown site ' + k);
+  if (!fs.existsSync(path.join(ROOT, 'sites', k, 'index.html'))) { console.log(`skip  ${k} (no sites/${k}/index.html yet)`); continue; }
   buildSite(k);
 }

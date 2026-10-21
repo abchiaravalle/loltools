@@ -2,7 +2,7 @@
 const { chromium } = require('playwright');
 const fs = require('fs');
 const { execSync } = require('child_process');
-const F = '/tmp/loltest/fixtures/';
+const F = process.env.FIXTURES || '/tmp/loltest/fixtures/';
 const OUT = '/tmp/loltest/out/heic/';
 fs.mkdirSync(OUT, { recursive: true });
 const base = process.argv[2];
