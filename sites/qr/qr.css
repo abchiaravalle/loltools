@@ -1,0 +1,58 @@
+/* qr-code.lol page styles (on top of lol.css). */
+.qr-types { margin-bottom: 1.25rem; }
+.qr-layout { display: grid; gap: 1.5rem; grid-template-columns: 1fr; }
+@media (min-width: 680px) {
+  .qr-layout { grid-template-columns: minmax(0, 1fr) 280px; align-items: start; }
+  .qr-preview { position: sticky; top: 1.5rem; }
+}
+.qr-layout > .controls { margin-top: 0; }
+.qr-layout [data-for] { margin-top: 0; }
+.qr-layout [hidden] { display: none !important; }
+
+.check { display: flex; gap: 0.55rem; align-items: flex-start; cursor: pointer; align-self: end; padding-bottom: 0.7rem; }
+.check input { margin-top: 0.25rem; accent-color: var(--accent); }
+
+.style-opts {
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 0.8rem 1rem; background: var(--bg-input);
+}
+.style-opts summary {
+  cursor: pointer; font-family: var(--font-mono); font-size: 0.82rem;
+  letter-spacing: 0.05em; text-transform: uppercase; color: var(--fg-muted);
+}
+.style-opts[open] summary { margin-bottom: 0.25rem; }
+.style-opts .field select, .style-opts .field input[type="color"] { background: var(--bg-card); }
+
+.qr-frame {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  width: 100%;
+  max-width: 280px;
+  margin: 0 auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-input);
+  display: grid; place-items: center;
+  overflow: hidden;
+}
+.qr-frame canvas { width: 100%; height: 100%; display: block; image-rendering: pixelated; }
+.qr-frame.empty canvas { visibility: hidden; }
+.qr-empty {
+  position: absolute; inset: 0; display: none; place-items: center; text-align: center;
+  padding: 1.5rem; margin: 0; color: var(--fg-dim); font-size: 0.9rem;
+}
+.qr-frame.empty .qr-empty { display: grid; }
+
+.qr-check { min-height: 1.4em; margin: 0.8rem 0 0; font-family: var(--font-mono); font-size: 0.82rem; color: var(--fg-muted); text-align: center; }
+.qr-check.ok { color: var(--mint); }
+.qr-check.warn { color: #f5c26b; }
+[data-theme="light"] .qr-check.warn { color: #b45309; }
+@media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) .qr-check.warn { color: #b45309; } }
+.qr-check.err { color: var(--danger); }
+
+.qr-actions { justify-content: center; margin-top: 0.75rem; }
+.qr-actions .btn-primary, .qr-actions .btn-ghost { flex: 1 1 0; padding-left: 1rem; padding-right: 1rem; }
+.qr-payload {
+  margin-top: 0.9rem; font-family: var(--font-mono); font-size: 0.75rem; color: var(--fg-dim);
+  word-break: break-all; text-align: center; max-height: 6.5em; overflow: hidden;
+}

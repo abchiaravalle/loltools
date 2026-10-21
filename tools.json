@@ -1,0 +1,44 @@
+{
+  "repo": "https://github.com/abchiaravalle/loltools",
+  "sites": {
+    "pdf": {
+      "name": "pdf.lol",
+      "project": "pdf-lol",
+      "domain": "pdf.lol",
+      "interim": "pdf-lol.amplifi.studio",
+      "live": false,
+      "emoji": "📄",
+      "blurb": "Merge and compress PDFs",
+      "title": "Merge and compress PDFs without uploading them · pdf.lol",
+      "description": "Combine PDFs or shrink a PDF right in your browser. Your files never leave your device. No signup, no watermark, no daily limit.",
+      "vendor": ["pdf-lib.min.js"]
+    },
+    "qr": {
+      "name": "qr-code.lol",
+      "project": "qr-code-lol",
+      "domain": "qr-code.lol",
+      "interim": "qr-code-lol.amplifi.studio",
+      "live": false,
+      "emoji": "🔳",
+      "blurb": "QR codes that don't expire",
+      "title": "Free QR code generator, codes never expire · qr-code.lol",
+      "description": "Make a QR code for a link, Wi-Fi, contact card, email or phone number. No signup, no scan tracking, and no redirect service that can shut your code off.",
+      "vendor": ["qrcode-generator.js", "jsqr.js"]
+    },
+    "heic": {
+      "name": "heic.lol",
+      "project": "heic-lol",
+      "domain": "heic.lol",
+      "interim": "heic-lol.amplifi.studio",
+      "live": false,
+      "emoji": "🖼️",
+      "blurb": "HEIC photos to JPG",
+      "title": "Convert HEIC to JPG in your browser, no upload · heic.lol",
+      "description": "Turn iPhone HEIC photos into JPG or PNG on your own device. Convert a batch, download a ZIP, and the copies don't carry your photo's location.",
+      "vendor": ["heic-to.min.js", "fflate.min.js"]
+    }
+  },
+  "extra_links": [
+    { "name": "findmyip.lol", "url": "https://findmyip.lol/", "blurb": "Your IP address, no tracking" }
+  ]
+}

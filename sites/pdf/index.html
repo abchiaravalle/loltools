@@ -1,0 +1,151 @@
+<!doctype html>
+<!--
+  pdf.lol. View source. Everything happens in your browser.
+
+  Network activity: the page loads its own files from this domain
+  (index.html, app.js, lol.css, lol.js, pdf-lib.min.js). After that the
+  page's Content-Security-Policy sets connect-src 'none', so the browser
+  blocks every fetch, XHR, beacon or WebSocket, including from our own code.
+  Your PDFs are read with the File API and never leave your device.
+
+  No analytics, no cookies, no ads. The only thing stored is your light/dark
+  choice, in localStorage on your device.
+
+  Source: https://github.com/abchiaravalle/loltools
+-->
+<html lang="en">
+<head>
+  <!--@head-->
+</head>
+<body>
+  <div class="container">
+    <!--@header-->
+
+    <main>
+      <section class="hero">
+        <h1>Merge and shrink PDFs without uploading them</h1>
+        <p class="lede">Your files stay on your device. pdf.lol does the work inside this browser tab, so there's no upload, no account and no watermark.</p>
+      </section>
+
+      <section class="card" aria-labelledby="tool-heading">
+        <h2 id="tool-heading" class="sr-only">PDF tool</h2>
+
+        <div class="segmented" role="radiogroup" aria-label="What do you want to do?">
+          <input type="radio" name="mode" id="mode-merge" value="merge" checked>
+          <label for="mode-merge">Merge PDFs</label>
+          <input type="radio" name="mode" id="mode-compress" value="compress">
+          <label for="mode-compress">Compress a PDF</label>
+        </div>
+
+        <!-- ===== Merge ===== -->
+        <div id="panel-merge" style="margin-top:1.25rem">
+          <label class="dropzone" id="mergeDrop">
+            <svg class="dz-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M12 18v-6"/><path d="M9 15h6"/></svg>
+            <span class="dz-title">Drop PDFs here, or click to pick them</span>
+            <span class="dz-sub">JPG and PNG images work too. Each one becomes a page.</span>
+            <input type="file" id="mergeInput" accept="application/pdf,.pdf,image/jpeg,image/png" multiple>
+          </label>
+          <ul class="file-list" id="mergeList" aria-label="Files to merge, in order"></ul>
+          <p class="hint" id="mergeHint" hidden>Use the arrows to change the order. The top file comes first.</p>
+          <div class="actions">
+            <button class="btn-primary" type="button" id="mergeBtn" disabled>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
+              Merge and download
+            </button>
+            <button class="btn-ghost" type="button" id="mergeClear" disabled>Clear</button>
+          </div>
+          <div class="progress" id="mergeProgress" hidden><span></span></div>
+          <p class="status" id="mergeStatus" role="status" aria-live="polite"></p>
+        </div>
+
+        <!-- ===== Compress ===== -->
+        <div id="panel-compress" style="margin-top:1.25rem" hidden>
+          <label class="dropzone" id="compressDrop">
+            <svg class="dz-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13l3 3 3-3"/><path d="M12 10v6"/></svg>
+            <span class="dz-title">Drop a PDF here, or click to pick one</span>
+            <span class="dz-sub">Pick several and each one gets its own smaller copy.</span>
+            <input type="file" id="compressInput" accept="application/pdf,.pdf" multiple>
+          </label>
+
+          <div class="controls">
+            <div class="field">
+              <span class="label" id="levelLabel">How small?</span>
+              <div class="segmented" role="radiogroup" aria-labelledby="levelLabel">
+                <input type="radio" name="level" id="lvl-strong" value="strong">
+                <label for="lvl-strong">Smallest</label>
+                <input type="radio" name="level" id="lvl-balanced" value="balanced" checked>
+                <label for="lvl-balanced">Balanced</label>
+                <input type="radio" name="level" id="lvl-light" value="light">
+                <label for="lvl-light">Best quality</label>
+              </div>
+              <p class="hint" id="levelHint"></p>
+            </div>
+            <label class="hint" style="display:flex;gap:.55rem;align-items:flex-start;cursor:pointer">
+              <input type="checkbox" id="stripMeta" checked style="margin-top:.25rem;accent-color:var(--accent)">
+              <span>Also remove the author name, title and the app that made the file from the PDF's file info.</span>
+            </label>
+          </div>
+
+          <ul class="file-list" id="compressList" aria-label="Compressed files"></ul>
+          <div class="progress" id="compressProgress" hidden><span></span></div>
+          <p class="status" id="compressStatus" role="status" aria-live="polite"></p>
+        </div>
+      </section>
+
+      <section class="card privacy-card" aria-labelledby="privacy-heading">
+        <h2 id="privacy-heading">How your files stay private</h2>
+        <ul class="privacy-grid">
+          <li>
+            <svg class="pg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
+            <div><span class="pg-title">No upload</span><span class="pg-desc">Your browser reads the PDF from your disk, rebuilds it in memory and saves the result. No server ever gets a copy.</span></div>
+          </li>
+          <li>
+            <svg class="pg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <div><span class="pg-title">Uploads are blocked</span><span class="pg-desc">The page's security policy sets <code>connect-src 'none'</code>, which tells your browser to refuse any upload or data request from this page, ours included.</span></div>
+          </li>
+          <li>
+            <svg class="pg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
+            <div><span class="pg-title">No analytics or cookies</span><span class="pg-desc">No Google Analytics, no pixels, no cookie banner, because there's nothing to consent to.</span></div>
+          </li>
+          <li>
+            <svg class="pg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
+            <div><span class="pg-title">Test it offline</span><span class="pg-desc">Load this page, turn off your Wi-Fi, then merge something. It still works, because nothing needs the internet.</span></div>
+          </li>
+        </ul>
+        <p class="privacy-cta">Read every line on <a href="https://github.com/abchiaravalle/loltools">GitHub</a>. The PDF work uses <a href="https://github.com/Hopding/pdf-lib">pdf-lib</a>, an open-source library served from this domain.</p>
+      </section>
+
+      <section class="card faq" aria-labelledby="faq-heading">
+        <h2 id="faq-heading">Questions</h2>
+        <details>
+          <summary>How much smaller will my PDF get?</summary>
+          <p>It depends on what's inside. pdf.lol shrinks the photos and scans in a PDF, so a scanned document or a photo-heavy file often drops by half or more. A PDF that's mostly text is already small and may barely change. Print-ready files from design apps often use CMYK color, and pdf.lol leaves those images untouched so the colors can't shift. If the copy isn't smaller, pdf.lol tells you to keep your original.</p>
+        </details>
+        <details>
+          <summary>Does compressing hurt the text?</summary>
+          <p>No. Text, vector drawings and fonts stay exactly as they were. Only images get resized and re-saved. "Best quality" keeps images large, "Smallest" shrinks them hard, which can look soft if you zoom in.</p>
+        </details>
+        <details>
+          <summary>Is there a file size or page limit?</summary>
+          <p>We don't set one. The limit is your device's memory. Big files (a few hundred MB) can be slow on a phone, and a laptop handles them better.</p>
+        </details>
+        <details>
+          <summary>Can it open password-protected PDFs?</summary>
+          <p>Not yet. If a PDF needs a password to open, pdf.lol tells you and leaves it alone.</p>
+        </details>
+        <details>
+          <summary>What happens to bookmarks and form fields when I merge?</summary>
+          <p>Pages, text, images and links carry over. The table-of-contents bookmarks from the original files don't, and fillable form fields can stop being fillable. Compressing keeps both.</p>
+        </details>
+      </section>
+
+      <!--@more-->
+    </main>
+
+    <!--@footer-->
+  </div>
+
+  <script src="pdf-lib.min.js"></script>
+  <script src="app.js?v={{BUILD_DATE}}"></script>
+</body>
+</html>

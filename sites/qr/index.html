@@ -1,0 +1,231 @@
+<!doctype html>
+<!--
+  qr-code.lol. View source. Everything happens in your browser.
+
+  Network activity: the page loads its own files from this domain
+  (index.html, app.js, qr.css, lol.css, lol.js, qrcode-generator.js, jsqr.js).
+  After that the page's Content-Security-Policy sets connect-src 'none', so
+  the browser blocks every fetch, XHR, beacon or WebSocket, ours included.
+  What you type never leaves your device.
+
+  The QR codes are "static": your link or text is written straight into the
+  pattern. There's no short link in between, so no company (us included) can
+  switch your code off, count its scans, or start charging for it later.
+
+  No analytics, no cookies, no ads. The only thing stored is your light/dark
+  choice, in localStorage on your device.
+
+  Source: https://github.com/abchiaravalle/loltools
+-->
+<html lang="en">
+<head>
+  <!--@head-->
+  <link rel="stylesheet" href="qr.css?v={{BUILD_DATE}}">
+</head>
+<body>
+  <div class="container">
+    <!--@header-->
+
+    <main>
+      <section class="hero">
+        <h1>QR codes that keep working</h1>
+        <p class="lede">Your link goes straight into the code, with no short link in between. Nobody can switch it off, track who scans it, or bill you for it next year. No signup.</p>
+      </section>
+
+      <section class="card" aria-labelledby="tool-heading">
+        <h2 id="tool-heading" class="sr-only">Make a QR code</h2>
+
+        <div class="segmented qr-types" role="radiogroup" aria-label="What should the code open?">
+          <input type="radio" name="type" id="t-url" value="url" checked><label for="t-url">Link</label>
+          <input type="radio" name="type" id="t-text" value="text"><label for="t-text">Text</label>
+          <input type="radio" name="type" id="t-wifi" value="wifi"><label for="t-wifi">Wi-Fi</label>
+          <input type="radio" name="type" id="t-vcard" value="vcard"><label for="t-vcard">Contact</label>
+          <input type="radio" name="type" id="t-email" value="email"><label for="t-email">Email</label>
+          <input type="radio" name="type" id="t-tel" value="tel"><label for="t-tel">Phone</label>
+        </div>
+
+        <div class="qr-layout">
+          <form class="controls" id="qrForm" autocomplete="off" novalidate>
+            <div data-for="url" class="controls">
+              <div class="field">
+                <label for="f-url">Link</label>
+                <input type="url" id="f-url" placeholder="https://example.com/menu" inputmode="url" spellcheck="false">
+              </div>
+            </div>
+
+            <div data-for="text" class="controls" hidden>
+              <div class="field">
+                <label for="f-text">Text</label>
+                <textarea id="f-text" placeholder="Anything you like. Phones show it as plain text."></textarea>
+              </div>
+            </div>
+
+            <div data-for="wifi" class="controls" hidden>
+              <div class="field">
+                <label for="f-ssid">Network name</label>
+                <input type="text" id="f-ssid" placeholder="The name you see in your Wi-Fi list" spellcheck="false">
+              </div>
+              <div class="field">
+                <label for="f-pass">Password</label>
+                <input type="text" id="f-pass" placeholder="Leave empty for an open network" spellcheck="false">
+              </div>
+              <div class="row-2">
+                <div class="field">
+                  <label for="f-sec">Security</label>
+                  <select id="f-sec">
+                    <option value="WPA" selected>WPA, WPA2 or WPA3 (most home networks)</option>
+                    <option value="WEP">WEP (old routers)</option>
+                    <option value="nopass">None, it's an open network</option>
+                  </select>
+                </div>
+                <label class="hint check">
+                  <input type="checkbox" id="f-hidden">
+                  <span>The network is hidden</span>
+                </label>
+              </div>
+            </div>
+
+            <div data-for="vcard" class="controls" hidden>
+              <div class="row-2">
+                <div class="field"><label for="f-first">First name</label><input type="text" id="f-first"></div>
+                <div class="field"><label for="f-last">Last name</label><input type="text" id="f-last"></div>
+              </div>
+              <div class="row-2">
+                <div class="field"><label for="f-org">Company</label><input type="text" id="f-org"></div>
+                <div class="field"><label for="f-title">Job title</label><input type="text" id="f-title"></div>
+              </div>
+              <div class="row-2">
+                <div class="field"><label for="f-vphone">Phone</label><input type="tel" id="f-vphone" inputmode="tel"></div>
+                <div class="field"><label for="f-vemail">Email</label><input type="email" id="f-vemail" inputmode="email" spellcheck="false"></div>
+              </div>
+              <div class="field"><label for="f-vurl">Website</label><input type="url" id="f-vurl" inputmode="url" spellcheck="false"></div>
+            </div>
+
+            <div data-for="email" class="controls" hidden>
+              <div class="field"><label for="f-to">Send to</label><input type="email" id="f-to" inputmode="email" spellcheck="false" placeholder="hello@example.com"></div>
+              <div class="field"><label for="f-subj">Subject (optional)</label><input type="text" id="f-subj"></div>
+              <div class="field"><label for="f-body">Message (optional)</label><textarea id="f-body"></textarea></div>
+            </div>
+
+            <div data-for="tel" class="controls" hidden>
+              <div class="field">
+                <label for="f-tel">Phone number</label>
+                <input type="tel" id="f-tel" inputmode="tel" placeholder="+1 423 555 0100">
+              </div>
+            </div>
+
+            <details class="style-opts">
+              <summary>Colors and size</summary>
+              <div class="controls">
+                <div class="row-2">
+                  <div class="field"><label for="f-fg">Code color</label><input type="color" id="f-fg" value="#000000"></div>
+                  <div class="field"><label for="f-bg">Background</label><input type="color" id="f-bg" value="#ffffff"></div>
+                </div>
+                <div class="row-2">
+                  <div class="field">
+                    <label for="f-ec">Damage tolerance</label>
+                    <select id="f-ec">
+                      <option value="L">Low, smallest pattern</option>
+                      <option value="M" selected>Medium (recommended)</option>
+                      <option value="Q">High</option>
+                      <option value="H">Highest, for print that gets scuffed</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="f-size">PNG size</label>
+                    <select id="f-size">
+                      <option value="512">512 px, for screens</option>
+                      <option value="1024" selected>1024 px</option>
+                      <option value="2048">2048 px, for print</option>
+                      <option value="4096">4096 px, for posters</option>
+                    </select>
+                  </div>
+                </div>
+                <label class="hint check">
+                  <input type="checkbox" id="f-margin" checked>
+                  <span>Keep the white border around the code. Scanners need it, so only turn it off if your design adds space.</span>
+                </label>
+              </div>
+            </details>
+          </form>
+
+          <div class="qr-preview">
+            <div class="qr-frame" id="qrFrame">
+              <canvas id="qrCanvas" width="264" height="264" role="img" aria-label="QR code preview"></canvas>
+              <p class="qr-empty" id="qrEmpty">Your code shows up here as you type.</p>
+            </div>
+            <p class="qr-check" id="qrCheck" role="status" aria-live="polite"></p>
+            <div class="actions qr-actions">
+              <button class="btn-primary" type="button" id="dlPng" disabled>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
+                PNG
+              </button>
+              <button class="btn-ghost" type="button" id="dlSvg" disabled>SVG</button>
+            </div>
+            <p class="hint qr-payload" id="qrPayload"></p>
+          </div>
+        </div>
+      </section>
+
+      <section class="card privacy-card" aria-labelledby="privacy-heading">
+        <h2 id="privacy-heading">Why these codes don't die</h2>
+        <ul class="privacy-grid">
+          <li>
+            <svg class="pg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+            <div><span class="pg-title">No middleman link</span><span class="pg-desc">Many QR sites encode their own short link and forward people to yours. If their trial ends or they shut down, every printed code breaks. Ours encodes your link itself.</span></div>
+          </li>
+          <li>
+            <svg class="pg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
+            <div><span class="pg-title">No scan tracking</span><span class="pg-desc">A scan goes from the phone straight to your link. We never see it, so we can't count it or sell it.</span></div>
+          </li>
+          <li>
+            <svg class="pg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <div><span class="pg-title">Your Wi-Fi password stays here</span><span class="pg-desc">The page's security policy sets <code>connect-src 'none'</code>, so your browser won't let it send what you type anywhere.</span></div>
+          </li>
+          <li>
+            <svg class="pg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+            <div><span class="pg-title">Test-scanned for you</span><span class="pg-desc">Before you download, the page reads the code back with a separate open-source scanner and checks it matches what you typed.</span></div>
+          </li>
+        </ul>
+        <p class="privacy-cta">Read every line on <a href="https://github.com/abchiaravalle/loltools">GitHub</a>. Codes are drawn with <a href="https://github.com/kazuhikoarase/qrcode-generator">qrcode-generator</a> and checked with <a href="https://github.com/cozmo/jsQR">jsQR</a>, both served from this domain.</p>
+      </section>
+
+      <section class="card faq" aria-labelledby="faq-heading">
+        <h2 id="faq-heading">Questions</h2>
+        <details>
+          <summary>Will my QR code ever expire?</summary>
+          <p>No. The code holds your link or text directly, so it works for as long as the thing it points to exists. If you change your website address later, you'll need a new code, because nothing sits in between to redirect it.</p>
+        </details>
+        <details>
+          <summary>Can I see how many people scanned it?</summary>
+          <p>Not from the code. Counting scans needs a middleman link, which is the thing that lets other services turn codes off. If you want numbers, add a tracking tag to your own link (for example <code>?utm_source=flyer</code>) and check your website's analytics.</p>
+        </details>
+        <details>
+          <summary>PNG or SVG?</summary>
+          <p>PNG works everywhere: docs, slides, social posts. SVG stays sharp at any size, so printers and designers usually want it for signs and packaging.</p>
+        </details>
+        <details>
+          <summary>Why won't my colored code scan?</summary>
+          <p>Scanners need a dark code on a light background with strong contrast. The page warns you when your colors are risky. A light code on a dark background works on many new phones and fails on plenty of older ones.</p>
+        </details>
+        <details>
+          <summary>What does "damage tolerance" do?</summary>
+          <p>Higher settings add spare data so the code still scans when part of it is scratched, folded or covered. The pattern gets denser, so for short links on a screen, Medium is plenty.</p>
+        </details>
+        <details>
+          <summary>Is it free for business use?</summary>
+          <p>Yes. No signup, no watermark, no limits, and you don't owe us credit.</p>
+        </details>
+      </section>
+
+      <!--@more-->
+    </main>
+
+    <!--@footer-->
+  </div>
+
+  <script src="qrcode-generator.js"></script>
+  <script src="jsqr.js"></script>
+  <script src="app.js?v={{BUILD_DATE}}"></script>
+</body>
+</html>

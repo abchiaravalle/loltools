@@ -1,0 +1,145 @@
+<!doctype html>
+<!--
+  heic.lol. View source. Everything happens in your browser.
+
+  Network activity: the page loads its own files from this domain
+  (index.html, app.js, lol.css, lol.js, heic-to.min.js, fflate.min.js).
+  After that the page's Content-Security-Policy sets connect-src 'none', so
+  the browser blocks every fetch, XHR, beacon or WebSocket, ours included.
+  Your photos are decoded inside this tab by libheif (compiled to JavaScript)
+  and never leave your device.
+
+  The converted files keep the pixels and, if you leave the box ticked, the
+  date taken. Location, camera and every other metadata field are dropped.
+
+  No analytics, no cookies, no ads. The only thing stored is your light/dark
+  choice, in localStorage on your device.
+
+  Source: https://github.com/abchiaravalle/loltools
+-->
+<html lang="en">
+<head>
+  <!--@head-->
+</head>
+<body>
+  <div class="container">
+    <!--@header-->
+
+    <main>
+      <section class="hero">
+        <h1>Turn iPhone HEIC photos into JPGs</h1>
+        <p class="lede">Drop in one photo or a few hundred. heic.lol converts them on your device, so your pictures never get uploaded, and the copies don't carry your GPS location.</p>
+      </section>
+
+      <section class="card" aria-labelledby="tool-heading">
+        <h2 id="tool-heading" class="sr-only">Convert HEIC photos</h2>
+
+        <label class="dropzone" id="drop">
+          <svg class="dz-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.09-3.09a2 2 0 0 0-2.82 0L6 21"/></svg>
+          <span class="dz-title">Drop HEIC photos here, or click to pick them</span>
+          <span class="dz-sub">.heic and .heif files from iPhones, iPads and some Android phones</span>
+          <input type="file" id="fileInput" accept=".heic,.heif,image/heic,image/heif" multiple>
+        </label>
+
+        <div class="controls">
+          <div class="row-2">
+            <div class="field">
+              <span class="label" id="fmtLabel">Save as</span>
+              <div class="segmented" role="radiogroup" aria-labelledby="fmtLabel">
+                <input type="radio" name="fmt" id="fmt-jpg" value="jpg" checked><label for="fmt-jpg">JPG</label>
+                <input type="radio" name="fmt" id="fmt-png" value="png"><label for="fmt-png">PNG</label>
+              </div>
+            </div>
+            <div class="field" id="qualityField">
+              <label for="quality">JPG quality: <span id="qualityVal">90</span></label>
+              <input type="range" id="quality" min="50" max="100" step="1" value="90">
+            </div>
+          </div>
+          <div class="field">
+            <label for="maxSize">Size</label>
+            <select id="maxSize">
+              <option value="0" selected>Keep the original size</option>
+              <option value="4096">Fit inside 4096 px (good for prints)</option>
+              <option value="2048">Fit inside 2048 px (good for email and the web)</option>
+              <option value="1280">Fit inside 1280 px (smallest)</option>
+            </select>
+          </div>
+          <label class="hint" style="display:flex;gap:.55rem;align-items:flex-start;cursor:pointer">
+            <input type="checkbox" id="keepDate" checked style="margin-top:.25rem;accent-color:var(--accent)">
+            <span>Keep the date the photo was taken, so it lands in the right spot in your photo library. Location and camera details are always removed.</span>
+          </label>
+        </div>
+
+        <ul class="file-list" id="list" aria-label="Converted photos"></ul>
+        <div class="progress" id="progress" hidden><span></span></div>
+        <p class="status" id="status" role="status" aria-live="polite"></p>
+        <div class="actions" id="bulk" hidden>
+          <button class="btn-primary" type="button" id="zipBtn" disabled>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
+            Download all as ZIP
+          </button>
+          <button class="btn-ghost" type="button" id="clearBtn">Clear</button>
+        </div>
+      </section>
+
+      <section class="card privacy-card" aria-labelledby="privacy-heading">
+        <h2 id="privacy-heading">Your photos stay yours</h2>
+        <ul class="privacy-grid">
+          <li>
+            <svg class="pg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
+            <div><span class="pg-title">No upload</span><span class="pg-desc">The decoder runs in this tab. Your browser reads each photo from your disk and saves the copy back to it.</span></div>
+          </li>
+          <li>
+            <svg class="pg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
+            <div><span class="pg-title">Location removed</span><span class="pg-desc">iPhone photos usually record where you took them. The converted copies drop that, plus the camera and phone details.</span></div>
+          </li>
+          <li>
+            <svg class="pg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <div><span class="pg-title">Uploads are blocked</span><span class="pg-desc">The page's security policy sets <code>connect-src 'none'</code>, so your browser won't let this page send anything anywhere.</span></div>
+          </li>
+          <li>
+            <svg class="pg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
+            <div><span class="pg-title">No analytics or cookies</span><span class="pg-desc">No tracking scripts, no ads, no account. Load the page, go offline, and it still converts.</span></div>
+          </li>
+        </ul>
+        <p class="privacy-cta">Read every line on <a href="https://github.com/abchiaravalle/loltools">GitHub</a>. Decoding uses <a href="https://github.com/strukturag/libheif">libheif</a> through <a href="https://github.com/hoppergee/heic-to">heic-to</a>, served from this domain.</p>
+      </section>
+
+      <section class="card faq" aria-labelledby="faq-heading">
+        <h2 id="faq-heading">Questions</h2>
+        <details>
+          <summary>What's a HEIC file?</summary>
+          <p>It's the photo format iPhones use by default since iOS 11. It takes about half the space of a JPG, but plenty of Windows apps, websites and upload forms still won't open it.</p>
+        </details>
+        <details>
+          <summary>JPG or PNG?</summary>
+          <p>JPG for almost everything. It's small and opens anywhere. PNG keeps every pixel exactly but makes files several times larger, so use it only when an app or print shop asks for it.</p>
+        </details>
+        <details>
+          <summary>Will I lose quality?</summary>
+          <p>At quality 90 most people can't tell the copy from the original. The file is usually bigger than the HEIC, because JPG packs photos less tightly.</p>
+        </details>
+        <details>
+          <summary>Does it keep Live Photo motion or depth effects?</summary>
+          <p>No. You get the main still photo. Portrait-mode blur stays, because it's baked into that still.</p>
+        </details>
+        <details>
+          <summary>Can I stop my iPhone from making HEIC files?</summary>
+          <p>Yes. Open Settings, then Camera, then Formats, and pick Most Compatible. New photos save as JPG. Photos you already took stay HEIC.</p>
+        </details>
+        <details>
+          <summary>Huge photos fail on my phone. Why?</summary>
+          <p>Phone browsers cap how big an image they'll process at once. If a 48-megapixel photo fails, pick "Fit inside 4096 px", or convert it on a computer.</p>
+        </details>
+      </section>
+
+      <!--@more-->
+    </main>
+
+    <!--@footer-->
+  </div>
+
+  <script src="fflate.min.js"></script>
+  <script type="module" src="app.js?v={{BUILD_DATE}}"></script>
+</body>
+</html>
