@@ -1,0 +1,40 @@
+{
+  "csp": {
+    "script-src": "'self' 'wasm-unsafe-eval'",
+    "connect-src": "'self'",
+    "worker-src": "'self'"
+  },
+  "credits": [
+    {
+      "name": "Tesseract.js 7.0.0",
+      "license": "Apache-2.0",
+      "url": "https://github.com/naptha/tesseract.js",
+      "file": "/vendor/tesseract/tesseract.esm.min.js, /vendor/tesseract/worker.min.js",
+      "licenseFile": "/vendor/licenses/tesseract.js.LICENSE",
+      "note": "Unmodified dist files. The worker bundle includes regenerator-runtime (MIT), zlib.js (MIT), idb-keyval (Apache-2.0), bmp-js (MIT), is-url (MIT), wasm-feature-detect (Apache-2.0), buffer (MIT) and ieee754 (BSD-3-Clause); their licence texts are in /vendor/licenses/."
+    },
+    {
+      "name": "tesseract.js-core 7.0.0",
+      "license": "Apache-2.0",
+      "url": "https://github.com/naptha/tesseract.js-core",
+      "file": "/vendor/tesseract/core/tesseract-core-relaxedsimd-lstm.wasm.js (plus the -simd-lstm and plain -lstm fallbacks)",
+      "licenseFile": "/vendor/licenses/tesseract.js-core.LICENSE",
+      "note": "The Tesseract OCR engine compiled to WebAssembly, unmodified. Only the three text-recognition (LSTM) builds are served; your browser loads just one of them."
+    },
+    {
+      "name": "Tesseract OCR (Balearica fork used by tesseract.js-core)",
+      "license": "Apache-2.0",
+      "url": "https://github.com/tesseract-ocr/tesseract",
+      "licenseFile": "/vendor/licenses/tesseract-ocr.LICENSE",
+      "note": "Compiled into the core files above, together with Leptonica (BSD-2-Clause style), libjpeg (IJG), libpng (libpng licence), libtiff (libtiff licence), libwebp (BSD-3-Clause), giflib (MIT), zlib (zlib licence) and openlibm (MIT/BSD). Licence texts: /vendor/licenses/leptonica.LICENSE, libjpeg.LICENSE, libpng.LICENSE, libtiff.LICENSE, libwebp.LICENSE, giflib.LICENSE, zlib.LICENSE, openlibm.LICENSE."
+    },
+    {
+      "name": "tessdata_fast language data (eng, spa, fra, deu, por), 4.1.0",
+      "license": "Apache-2.0",
+      "url": "https://github.com/tesseract-ocr/tessdata_fast",
+      "file": "/vendor/tesseract/lang/*.traineddata.gz",
+      "licenseFile": "/vendor/licenses/tessdata_fast.LICENSE",
+      "note": "Byte-for-byte copies of the .traineddata files, gzipped so they download faster."
+    }
+  ]
+}
