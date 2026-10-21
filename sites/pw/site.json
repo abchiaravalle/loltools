@@ -1,0 +1,12 @@
+{
+  "credits": [
+    {
+      "name": "EFF large wordlist for passphrases (7,776 words, eff_large_wordlist.txt, 2016) by Joseph Bonneau and the Electronic Frontier Foundation",
+      "license": "CC BY 3.0 US (Creative Commons Attribution 3.0 United States)",
+      "url": "https://www.eff.org/dice",
+      "file": "/vendor/eff-large-wordlist.js",
+      "licenseFile": "/vendor/licenses/eff-large-wordlist.LICENSE.txt",
+      "note": "Words and order unchanged; the dice numbers are left out because each is the word's position in base 6. Not affiliated with or endorsed by the EFF."
+    }
+  ]
+}

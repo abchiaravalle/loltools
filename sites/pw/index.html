@@ -1,0 +1,210 @@
+<!doctype html>
+<!--
+  pwgen.lol. View source. Everything happens in your browser.
+
+  Network activity: the page loads its own files from this domain
+  (index.html, app.js, pw.css, lol.css, lol.js, vendor/eff-large-wordlist.js).
+  After that the page's Content-Security-Policy sets connect-src 'none', so
+  the browser blocks every fetch, XHR, beacon or WebSocket, ours included.
+  Nothing is uploaded. Your passwords never leave this tab.
+
+  Randomness: crypto.getRandomValues only, with rejection sampling so every
+  character and word is equally likely. Math.random is never used.
+
+  Storage: generated passwords and anything you type into the checker are
+  never stored: no localStorage, no sessionStorage, no cookies, no URL.
+  localStorage holds only your light/dark choice and your generator settings
+  (length, character kinds, word count, separator), never a password.
+
+  No analytics, no cookies, no ads.
+
+  Source: https://github.com/abchiaravalle/loltools
+-->
+<html lang="en">
+<head>
+  <!--@head-->
+  <link rel="stylesheet" href="/pw.css?v={{BUILD_DATE}}">
+</head>
+<body>
+  <div class="container">
+    <!--@header-->
+
+    <main>
+      <section class="hero">
+        <h1>Strong passwords, made on your device</h1>
+        <p class="lede">Random passwords and passphrases from your browser's own secure random generator. They're never saved and never sent anywhere. No signup.</p>
+      </section>
+
+      <section class="card pw-card" aria-labelledby="tool-heading">
+        <h2 id="tool-heading" class="sr-only">Make a password</h2>
+
+        <div class="segmented pw-modes" role="radiogroup" aria-label="What kind of password?">
+          <input type="radio" name="mode" id="m-password" value="password" checked><label for="m-password">Random password</label>
+          <input type="radio" name="mode" id="m-passphrase" value="passphrase"><label for="m-passphrase">Passphrase</label>
+        </div>
+
+        <div class="pw-out-wrap">
+          <div class="pw-out" id="pwOut" aria-live="polite" aria-label="Your new password" translate="no" spellcheck="false"></div>
+          <button class="pw-copy" type="button" id="copyBtn" aria-label="Copy password">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            <span class="btn-label">Copy</span>
+          </button>
+        </div>
+
+        <div class="strength" aria-live="polite">
+          <div class="meter" id="meter" aria-hidden="true"><span id="meterFill"></span></div>
+          <p class="st-line">
+            <span class="st-bits" id="bits">0 bits</span>
+            <span class="st-label" id="strength"></span>
+          </p>
+          <p class="st-crack">Time to guess: <strong id="crack"></strong></p>
+          <p class="hint st-assume">Assumes an offline attack trying 100 billion guesses a second, by someone who knows exactly how this page makes passwords. On average they'd find it after trying half of all the possibilities.</p>
+        </div>
+
+        <div class="actions pw-actions">
+          <button class="btn-primary" type="button" id="newBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
+            <span id="newLabel">New password</span>
+          </button>
+          <button class="btn-ghost" type="button" id="tenBtn">Make 10 at once</button>
+        </div>
+        <p class="status" id="pwMsg" role="status" aria-live="polite"></p>
+
+        <div class="pw-list-wrap" id="listWrap" hidden>
+          <div class="pw-list-head">
+            <p class="hint" id="listNote"></p>
+            <button class="mini-btn" type="button" id="hideList">Hide</button>
+          </div>
+          <ol class="pw-list" id="pwList" translate="no"></ol>
+        </div>
+
+        <div class="controls pw-opts" id="pwOpts">
+          <div class="field">
+            <div class="range-head">
+              <label for="len">Length</label>
+              <input type="number" id="lenNum" min="8" max="128" value="20" inputmode="numeric" aria-label="Length in characters">
+            </div>
+            <input type="range" id="len" min="8" max="128" value="20">
+            <p class="hint">8 to 128 characters. 16 or more is a good habit, 20 is our default.</p>
+          </div>
+          <fieldset class="checks">
+            <legend class="sr-only">Characters to use</legend>
+            <label class="check"><input type="checkbox" id="o-lower" checked><span>Lowercase <code>a-z</code></span></label>
+            <label class="check"><input type="checkbox" id="o-upper" checked><span>Uppercase <code>A-Z</code></span></label>
+            <label class="check"><input type="checkbox" id="o-digits" checked><span>Digits <code>0-9</code></span></label>
+            <label class="check"><input type="checkbox" id="o-symbols" checked><span>Symbols <code>!@#$%&amp;*</code> and 25 more</span></label>
+            <label class="check"><input type="checkbox" id="o-avoid"><span>Avoid look-alikes <code>0 O 1 l I</code></span></label>
+            <label class="check"><input type="checkbox" id="o-require" checked><span>At least one of each kind I picked</span></label>
+          </fieldset>
+        </div>
+
+        <div class="controls pw-opts" id="ppOpts" hidden>
+          <div class="field">
+            <div class="range-head">
+              <label for="words">Words</label>
+              <input type="number" id="wordsNum" min="3" max="15" value="5" inputmode="numeric" aria-label="Number of words">
+            </div>
+            <input type="range" id="words" min="3" max="15" value="5">
+            <p class="hint">Each word is picked at random from the 7,776 words in the EFF's long list and adds about 12.9 bits. 5 words is a good start, 6 or more for a password manager's main password.</p>
+          </div>
+          <div class="row-2">
+            <div class="field">
+              <label for="sep">Between words</label>
+              <select id="sep">
+                <option value="hyphen" selected>Hyphen (word-word)</option>
+                <option value="space">Space (word word)</option>
+                <option value="period">Period (word.word)</option>
+                <option value="underscore">Underscore (word_word)</option>
+                <option value="comma">Comma (word,word)</option>
+              </select>
+            </div>
+            <fieldset class="checks checks-1">
+              <legend class="sr-only">Passphrase extras</legend>
+              <label class="check"><input type="checkbox" id="o-cap"><span>Capitalize each word</span></label>
+              <label class="check"><input type="checkbox" id="o-num"><span>Add a number</span></label>
+            </fieldset>
+          </div>
+        </div>
+      </section>
+
+      <section class="card checker" aria-labelledby="check-heading">
+        <h2 id="check-heading">Check a password you already have</h2>
+        <p class="hint chk-intro">This is a rough estimate. It runs only in this tab: what you type here is never sent anywhere and never saved. Even so, a good habit is to test a similar made-up password rather than one you really use.</p>
+        <div class="field">
+          <label for="chkInput">Password to check</label>
+          <input type="password" id="chkInput" autocomplete="off" autocapitalize="off" spellcheck="false" data-1p-ignore data-lpignore="true" data-bwignore data-form-type="other">
+        </div>
+        <label class="check chk-show"><input type="checkbox" id="chkShow"><span>Show what I type</span></label>
+        <div class="chk-result" id="chkResult" hidden aria-live="polite">
+          <div class="meter" id="chkMeter" aria-hidden="true"><span id="chkMeterFill"></span></div>
+          <p class="st-line">
+            <span class="st-bits" id="chkBits"></span>
+            <span class="st-label" id="chkLabel"></span>
+          </p>
+          <p class="st-crack">Rough time to guess: <strong id="chkCrack"></strong></p>
+          <ul class="chk-notes" id="chkNotes"></ul>
+          <p class="hint">The guess comes from simple rules: length, kinds of characters, runs like <code>abc</code> or <code>1234</code>, years, about 100 very common passwords, and the 7,776 EFF words. Real attackers use far bigger lists, so read a good score as "not obviously weak", not as a promise. Same 100 billion guesses a second as above.</p>
+        </div>
+      </section>
+
+      <section class="card privacy-card" aria-labelledby="privacy-heading">
+        <h2 id="privacy-heading">How your passwords stay private</h2>
+        <ul class="privacy-grid">
+          <li>
+            <svg class="pg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 14h3M1 9h3M1 14h3"/></svg>
+            <div><span class="pg-title">Made in this tab</span><span class="pg-desc">Your browser's secure random generator (<code>crypto.getRandomValues</code>) picks every character and word. No server is involved, so we have nothing to log.</span></div>
+          </li>
+          <li>
+            <svg class="pg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            <div><span class="pg-title">Never saved</span><span class="pg-desc">Passwords aren't written to storage, cookies or the address bar. Close the tab and they're gone. Only your settings, like length, are remembered on this device.</span></div>
+          </li>
+          <li>
+            <svg class="pg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <div><span class="pg-title">Sending is blocked</span><span class="pg-desc">The page's security policy sets <code>connect-src 'none'</code>, so your browser won't let this page send anything anywhere, even if we wanted it to.</span></div>
+          </li>
+          <li>
+            <svg class="pg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
+            <div><span class="pg-title">No analytics or cookies</span><span class="pg-desc">No tracking scripts, no ads, no account. Cloudflare, our host, keeps standard access logs like any web host. Your passwords can't be in them, because they never leave the tab.</span></div>
+          </li>
+        </ul>
+        <p class="privacy-cta">Read every line on <a href="https://github.com/abchiaravalle/loltools">GitHub</a>. Passphrase words come from the <a href="https://www.eff.org/dice">EFF's long wordlist</a> (CC BY 3.0), served from this domain.</p>
+      </section>
+
+      <section class="card faq" aria-labelledby="faq-heading">
+        <h2 id="faq-heading">Questions</h2>
+        <details>
+          <summary>What do the "bits" mean?</summary>
+          <p>They count how many different passwords your settings could have made, all equally likely. Each extra bit doubles that number. 20 characters picked from all 94 letters, digits and symbols is 131.1 bits. Each passphrase word adds about 12.9 bits, so 5 words is 64.6. We work it out from your settings, not from the password you got, so it already assumes the attacker knows exactly how this page works. "At least one of each kind" rules out a few passwords, so it scores slightly lower, and we count that exactly.</p>
+        </details>
+        <details>
+          <summary>Where does the "time to guess" come from?</summary>
+          <p>It's half the possibilities divided by 100 billion guesses a second. That's roughly a rig of high-end graphics cards attacking a stolen database that used a fast hash. Sites that store passwords properly (bcrypt, Argon2) slow attackers down by thousands of times or more, and a login page that limits tries is far slower still. Treat the number as a ballpark, not a promise.</p>
+        </details>
+        <details>
+          <summary>Should I use a password or a passphrase?</summary>
+          <p>If a password manager fills it in for you, use a random password: it packs the most strength into the fewest characters. For things you type yourself, like your computer login or your password manager's main password, a passphrase of 6 or more words is easier to remember and type, and just as hard to guess.</p>
+        </details>
+        <details>
+          <summary>Is it really random?</summary>
+          <p>Yes. Every pick comes from <code>crypto.getRandomValues</code>, the same source browsers use for encryption keys. We also avoid a common mistake that makes some characters a tiny bit more likely than others ("modulo bias"). The page never uses <code>Math.random</code>, and the test in our repo makes thousands of passwords and checks every character shows up as often as chance predicts.</p>
+        </details>
+        <details>
+          <summary>A site won't accept my password. What now?</summary>
+          <p>Some sites limit length or refuse certain symbols. Lower the length or turn off symbols and make a new one. The strength number updates as you change settings, so you can see what each change costs. "Avoid look-alikes" helps if you ever have to read a password out or type it from paper.</p>
+        </details>
+        <details>
+          <summary>Does the checker send my password anywhere?</summary>
+          <p>No. It runs in this tab, nothing you type is saved, and the page's security policy blocks it from sending anything. It's a rough check built from simple rules, not the huge lists real attackers use, so it can rate a weak password too kindly. It can't know whether a password has already leaked in a breach.</p>
+        </details>
+      </section>
+
+      <!--@more-->
+    </main>
+
+    <!--@footer-->
+  </div>
+
+  <script src="/vendor/eff-large-wordlist.js"></script>
+  <script src="/app.js?v={{BUILD_DATE}}"></script>
+</body>
+</html>

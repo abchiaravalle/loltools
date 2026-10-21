@@ -1,0 +1,136 @@
+/* pwgen.lol page styles (on top of lol.css). */
+.pw-card [hidden] { display: none !important; }
+.pw-modes { margin-bottom: 1.25rem; }
+
+/* ---------- The password itself ---------- */
+.pw-out-wrap {
+  display: flex; align-items: stretch; gap: 0;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.pw-out {
+  flex: 1; min-width: 0;
+  padding: 1rem 1.1rem;
+  font-family: var(--font-mono);
+  font-size: clamp(1.05rem, 3.2vw, 1.35rem);
+  line-height: 1.45;
+  color: var(--fg);
+  word-break: break-all;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  user-select: all;
+  -webkit-user-select: all;
+  min-height: 3.6rem;
+}
+.pw-out[data-mode="passphrase"] { word-break: normal; }
+.pw-out.empty::before { content: attr(data-empty); color: var(--fg-dim); font-size: 0.95rem; font-family: var(--font-sans); user-select: none; }
+.c-dig { color: var(--accent); }
+.c-sym { color: var(--mint); }
+
+.pw-copy {
+  flex-shrink: 0;
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.45rem;
+  min-width: 6.5rem; padding: 0 1rem;
+  background: var(--accent); color: #fff;
+  border: 0; border-left: 1px solid var(--border);
+  font: 600 0.95rem var(--font-sans);
+  cursor: pointer; transition: filter .15s ease;
+}
+.pw-copy:hover:not(:disabled) { filter: brightness(1.08); }
+.pw-copy:disabled { opacity: 0.45; cursor: not-allowed; }
+.pw-copy:focus-visible { outline: 2px solid var(--fg); outline-offset: -4px; }
+.pw-copy svg { width: 18px; height: 18px; }
+.pw-copy.copied { filter: brightness(1.12); }
+@media (max-width: 480px) {
+  .pw-out-wrap { flex-direction: column; }
+  .pw-copy { border-left: 0; border-top: 1px solid var(--border); padding: 0.75rem 1rem; }
+}
+
+/* ---------- Strength ---------- */
+.strength { margin-top: 1rem; }
+.meter {
+  height: 6px; border-radius: 6px; background: var(--bg-input);
+  border: 1px solid var(--border); overflow: hidden;
+}
+.meter > span { display: block; height: 100%; width: 0; background: var(--fg-dim); transition: width .2s ease, background-color .2s ease; }
+.meter.lvl-weak > span { background: var(--danger); }
+.meter.lvl-fair > span { background: var(--fg-muted); }
+.meter.lvl-strong > span { background: var(--accent); }
+.meter.lvl-great > span { background: var(--mint); }
+.st-line { display: flex; align-items: baseline; gap: 0.75rem; flex-wrap: wrap; margin: 0.65rem 0 0.15rem; }
+.st-bits { font-family: var(--font-mono); font-size: 1.05rem; font-weight: 600; }
+.st-label { font-family: var(--font-mono); font-size: 0.82rem; color: var(--fg-muted); }
+.st-label.lvl-weak { color: var(--danger); }
+.st-label.lvl-strong { color: var(--accent); }
+.st-label.lvl-great { color: var(--mint); }
+.st-crack { margin: 0 0 0.35rem; font-size: 0.95rem; color: var(--fg-muted); }
+.st-crack strong { color: var(--fg); font-weight: 600; }
+.st-assume { font-size: 0.8rem; }
+
+.pw-actions { margin-top: 1rem; }
+.pw-actions + .status { margin-top: 0.6rem; }
+
+/* ---------- Ten at once ---------- */
+.pw-list-wrap {
+  margin-top: 0.5rem; padding: 0.9rem 1rem;
+  border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-input);
+}
+.pw-list-head { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 0.6rem; }
+.pw-list {
+  list-style: none; margin: 0; padding: 0; counter-reset: pw;
+  display: grid; gap: 0.3rem; font-family: var(--font-mono); font-size: 0.92rem;
+}
+.pw-list li {
+  counter-increment: pw;
+  display: flex; align-items: flex-start; gap: 0.6rem;
+  padding: 0.3rem 0; border-top: 1px solid var(--border);
+}
+.pw-list li:first-child { border-top: 0; }
+.pw-list li::before {
+  content: counter(pw) "."; flex-shrink: 0; width: 1.8rem; text-align: right;
+  color: var(--fg-dim); line-height: 26px;
+}
+.pw-list .pw-text {
+  flex: 1; min-width: 0; line-height: 26px;
+  color: var(--fg); word-break: break-all; overflow-wrap: anywhere; white-space: pre-wrap;
+  user-select: all; -webkit-user-select: all;
+}
+.pw-list .pw-text.is-phrase { word-break: normal; }
+.pw-list .mini-btn { flex-shrink: 0; height: 26px; font-size: 0.75rem; }
+.pw-list .mini-btn.copied { color: var(--mint); border-color: var(--mint); }
+
+/* ---------- Options ---------- */
+.pw-opts { border-top: 1px solid var(--border); padding-top: 1.25rem; }
+.range-head { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+.range-head label {
+  font-family: var(--font-mono); font-size: 0.78rem; letter-spacing: 0.05em;
+  text-transform: uppercase; color: var(--fg-muted);
+}
+.range-head input[type="number"] {
+  width: 5rem; font: 600 1rem var(--font-mono); color: var(--fg); text-align: center;
+  background: var(--bg-input); border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 0.35rem 0.4rem;
+}
+.range-head input[type="number"]:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
+.checks { border: 0; margin: 0; padding: 0; display: grid; gap: 0.55rem 1rem; grid-template-columns: 1fr; }
+@media (min-width: 540px) { .checks { grid-template-columns: 1fr 1fr; } .checks.checks-1 { grid-template-columns: 1fr; align-content: end; } }
+.check { display: flex; gap: 0.55rem; align-items: flex-start; cursor: pointer; font-size: 0.95rem; }
+.check input { margin-top: 0.3rem; accent-color: var(--accent); flex-shrink: 0; }
+.check code { font-size: 0.85em; }
+
+/* ---------- Checker ---------- */
+.chk-intro { margin-bottom: 1rem; }
+.checker .field input[type="password"], .checker .field input[type="text"] {
+  width: 100%; font: 1rem var(--font-mono); color: var(--fg);
+  background: var(--bg-input); border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 0.7rem 0.8rem;
+}
+.checker .field input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
+.chk-show { font-size: 0.85rem; color: var(--fg-muted); margin-top: 0.6rem; }
+.chk-result { margin-top: 1rem; }
+.chk-result[hidden] { display: none; }
+.chk-notes { margin: 0.4rem 0 0.75rem; padding-left: 1.2rem; color: var(--fg-muted); font-size: 0.9rem; }
+.chk-notes:empty { display: none; }
+.chk-notes li + li { margin-top: 0.2rem; }

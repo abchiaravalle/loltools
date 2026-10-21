@@ -173,6 +173,7 @@ function creditRows(site, sj) {
 }
 
 function licensesPage(site, sj) {
+  const favicon = `data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>${site.emoji}</text></svg>`;
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -180,6 +181,7 @@ function licensesPage(site, sj) {
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex">
   <title>Open-source credits · ${esc(site.name)}</title>
+  <link rel="icon" href="${esc(favicon)}">
   <link rel="stylesheet" href="/lol.css?v=${BUILD_DATE}">
 </head>
 <body>
