@@ -1,0 +1,234 @@
+<!doctype html>
+<!--
+  vid2gif.lol. View source. Everything happens in your browser.
+
+  Network activity: the page loads its own files from this domain
+  (index.html, app.js, video.css, lol.css, lol.js, and, in background
+  threads, gif-worker.js, gifcore.js, mp3-worker.js plus vendor/gifenc.esm.js,
+  vendor/mp4box.min.js, vendor/WasmMediaEncoder.min.js and
+  vendor/lame-mp3-wasm.js, which holds the LAME MP3 encoder as WebAssembly).
+  After that the page's Content-Security-Policy sets connect-src 'none', so
+  the browser blocks every fetch, XHR, beacon or WebSocket, ours included.
+  'wasm-unsafe-eval' lets the browser run that one WebAssembly encoder. It
+  doesn't allow eval() of JavaScript.
+
+  Your video is never uploaded. Your browser's own video decoder reads it
+  from your disk, a canvas grabs the frames, and the GIF and MP3 are built
+  in this tab and saved straight back to your device.
+
+  No analytics, no cookies, no ads. The only thing stored is your light/dark
+  choice, in localStorage on your device.
+
+  Source: https://github.com/abchiaravalle/loltools
+-->
+<html lang="en">
+<head>
+  <!--@head-->
+  <link rel="stylesheet" href="/video.css?v={{BUILD_DATE}}">
+</head>
+<body>
+  <div class="container">
+    <!--@header-->
+
+    <main>
+      <section class="hero">
+        <h1>Turn a video into a GIF, or pull out the sound as an MP3</h1>
+        <p class="lede">Pick a clip, trim it, and save. vid2gif.lol does the work on your device, so your video never gets uploaded anywhere.</p>
+      </section>
+
+      <section class="card" aria-labelledby="tool-heading">
+        <h2 id="tool-heading" class="sr-only">Convert a video</h2>
+
+        <label class="dropzone" id="drop">
+          <svg class="dz-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="15" height="16" rx="2"/><path d="m17 10 5-3v10l-5-3"/></svg>
+          <span class="dz-title" id="dzTitle">Drop a video here, or click to pick one</span>
+          <span class="dz-sub">MP4, MOV or WebM, from your phone, camera or screen recorder</span>
+          <input type="file" id="fileInput" accept="video/*,.mp4,.m4v,.mov,.webm,.mkv">
+        </label>
+        <p class="status" id="loadStatus" role="status" aria-live="polite"></p>
+
+        <div id="editor" hidden>
+          <div class="file-head">
+            <span class="fh-name" id="fileName"></span>
+            <span class="fh-meta" id="fileMeta"></span>
+          </div>
+          <video id="preview" class="preview" controls playsinline muted preload="auto"></video>
+
+          <div class="controls">
+            <div class="field">
+              <span class="label" id="modeLabel">Make</span>
+              <div class="segmented" role="radiogroup" aria-labelledby="modeLabel">
+                <input type="radio" name="mode" id="mode-gif" value="gif" checked><label for="mode-gif">GIF</label>
+                <input type="radio" name="mode" id="mode-mp3" value="mp3"><label for="mode-mp3">MP3 (sound only)</label>
+              </div>
+            </div>
+
+            <label class="check" id="mp3TrimRow" hidden>
+              <input type="checkbox" id="mp3Trim">
+              <span>Only save part of the sound (otherwise you get the whole sound track)</span>
+            </label>
+
+            <div class="trim" id="trimBox">
+              <div class="field">
+                <label for="start">Start</label>
+                <div class="time-row">
+                  <input type="text" id="start" inputmode="decimal" autocomplete="off" spellcheck="false" aria-describedby="clipNote">
+                  <button class="mini-btn" type="button" id="setStart" title="Use the spot the preview is paused on">Use current spot</button>
+                </div>
+              </div>
+              <div class="field">
+                <label for="end">End</label>
+                <div class="time-row">
+                  <input type="text" id="end" inputmode="decimal" autocomplete="off" spellcheck="false" aria-describedby="clipNote">
+                  <button class="mini-btn" type="button" id="setEnd" title="Use the spot the preview is paused on">Use current spot</button>
+                </div>
+              </div>
+            </div>
+            <p class="clip-note" id="clipNote" aria-live="polite"></p>
+
+            <div id="gifPanel" class="panel">
+              <div class="row-2">
+                <div class="field">
+                  <label for="width">Width</label>
+                  <select id="width">
+                    <option value="320">320 px (small, for chats)</option>
+                    <option value="480" selected>480 px (good default)</option>
+                    <option value="640">640 px (sharper, bigger file)</option>
+                    <option value="orig">Original size (can be huge)</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="style">Colors</label>
+                  <select id="style">
+                    <option value="smooth" selected>Smooth (best for real video)</option>
+                    <option value="none">Flat (smaller, for screen recordings)</option>
+                    <option value="pattern">Pattern (retro look)</option>
+                  </select>
+                </div>
+              </div>
+              <div class="field">
+                <span class="label" id="fpsLabel">Frames per second</span>
+                <div class="segmented" role="radiogroup" aria-labelledby="fpsLabel">
+                  <input type="radio" name="fps" id="fps-10" value="10"><label for="fps-10">10</label>
+                  <input type="radio" name="fps" id="fps-15" value="15" checked><label for="fps-15">15</label>
+                  <input type="radio" name="fps" id="fps-20" value="20"><label for="fps-20">20</label>
+                </div>
+              </div>
+              <div class="actions">
+                <button class="btn-primary" type="button" id="gifBtn">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.09-3.09a2 2 0 0 0-2.82 0L6 21"/></svg>
+                  Make GIF
+                </button>
+              </div>
+            </div>
+
+            <div id="mp3Panel" class="panel" hidden>
+              <div class="field">
+                <span class="label" id="kbpsLabel">Quality</span>
+                <div class="segmented" role="radiogroup" aria-labelledby="kbpsLabel">
+                  <input type="radio" name="kbps" id="kbps-128" value="128"><label for="kbps-128">128 kbps</label>
+                  <input type="radio" name="kbps" id="kbps-192" value="192" checked><label for="kbps-192">192 kbps</label>
+                  <input type="radio" name="kbps" id="kbps-320" value="320"><label for="kbps-320">320 kbps</label>
+                </div>
+                <p class="hint">192 is plenty for most things. 128 makes a smaller file for talks and podcasts. 320 is the most MP3 can do, but it can't add back detail the video's sound didn't have.</p>
+              </div>
+              <p class="hint" id="audioNote"></p>
+              <div class="actions">
+                <button class="btn-primary" type="button" id="mp3Btn">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+                  Make MP3
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="progress" id="progress" hidden><span></span></div>
+          <div class="actions busy-row">
+            <p class="status" id="status" role="status" aria-live="polite"></p>
+            <button class="btn-ghost" type="button" id="cancelBtn" hidden>Stop</button>
+          </div>
+
+          <div class="result" id="gifOut" hidden>
+            <img alt="Your GIF">
+            <div class="result-bar">
+              <span class="result-meta" id="gifMeta"></span>
+              <button class="btn-primary" type="button" id="gifSave">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
+                Save GIF
+              </button>
+            </div>
+          </div>
+
+          <div class="result" id="mp3Out" hidden>
+            <audio controls preload="metadata"></audio>
+            <div class="result-bar">
+              <span class="result-meta" id="mp3Meta"></span>
+              <button class="btn-primary" type="button" id="mp3Save">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
+                Save MP3
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card privacy-card" aria-labelledby="privacy-heading">
+        <h2 id="privacy-heading">How your video stays private</h2>
+        <ul class="privacy-grid">
+          <li>
+            <svg class="pg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
+            <div><span class="pg-title">No upload</span><span class="pg-desc">Your browser's own video player reads the file from your disk. The GIF or MP3 is made in this tab and saved straight back to your device.</span></div>
+          </li>
+          <li>
+            <svg class="pg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <div><span class="pg-title">Uploads are blocked</span><span class="pg-desc">The page's security policy sets <code>connect-src 'none'</code>, so your browser won't let this page send anything anywhere.</span></div>
+          </li>
+          <li>
+            <svg class="pg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
+            <div><span class="pg-title">No third parties</span><span class="pg-desc">Every script, the MP3 encoder included, comes from this domain. No CDNs, no outside fonts, no code from anyone else.</span></div>
+          </li>
+          <li>
+            <svg class="pg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
+            <div><span class="pg-title">No analytics or cookies</span><span class="pg-desc">No tracking scripts, no ads, no account. Cloudflare, our host, keeps standard access logs like any web host. Your video can't be in them, because it never leaves the tab.</span></div>
+          </li>
+        </ul>
+        <p class="privacy-cta">Read every line on <a href="https://github.com/abchiaravalle/loltools">GitHub</a>. MP3s are made with <a href="https://lame.sourceforge.io/">LAME</a> and GIFs are written with <a href="https://github.com/mattdesl/gifenc">gifenc</a>, both served from this domain. See the <a href="/licenses/">credits</a>.</p>
+      </section>
+
+      <section class="card faq" aria-labelledby="faq-heading">
+        <h2 id="faq-heading">Questions</h2>
+        <details>
+          <summary>How long can my GIF be?</summary>
+          <p>Up to 60 seconds, but keep it short. GIF is an old format that stores every frame as a full picture, so a 15-second clip at 480 px is often 5 to 20 MB, about ten times the size of the video it came from. Many chat apps and sites cap GIFs somewhere between 8 and 15 MB. For a smaller file, trim it, pick 320 px, or use 10 frames per second.</p>
+        </details>
+        <details>
+          <summary>Why do the colors look a bit grainy?</summary>
+          <p>A GIF can only use 256 colors. vid2gif.lol picks the best 255 for your clip and mixes them in tiny dots to fake the rest, which is what keeps skies and skin from turning into stripes. If your clip is a screen recording with flat colors, pick "Flat" for a cleaner, smaller file.</p>
+        </details>
+        <details>
+          <summary>Will it work on my phone?</summary>
+          <p>Short clips usually do. Long videos and 4K videos can be slow or fail on phones, because the phone has to decode the video and hold the frames in memory. If it stalls or the tab reloads, trim to a few seconds, pick 320 or 480 px, or use a computer. For MP3s, MP4 and MOV files are read in small pieces, so long ones usually work. A WebM's sound has to be decoded in one go, so long WebM files are harder on phones.</p>
+        </details>
+        <details>
+          <summary>Which videos work?</summary>
+          <p>Anything your browser can play: MP4 and MOV from phones and cameras, and WebM from screen recorders. iPhone videos saved as HEVC play in Safari and in recent Chrome and Edge on most computers. Some browsers can't play them, and if your browser can't play a video, this tool can't read it either. Portrait videos come out the right way up.</p>
+        </details>
+        <details>
+          <summary>The MP3 option says there's no audio track.</summary>
+          <p>The video file doesn't contain any sound. That's common with screen recordings made with the microphone off, GIF-style clips from social sites, and some phone videos shared through apps that strip the sound. There's nothing to save, so pick a different video.</p>
+        </details>
+        <details>
+          <summary>Does the GIF keep the sound?</summary>
+          <p>No. GIFs can't hold sound. That's what the MP3 option is for: it saves the sound track on its own, for the whole video or just the part between your start and end times.</p>
+        </details>
+      </section>
+
+      <!--@more-->
+    </main>
+
+    <!--@footer-->
+  </div>
+
+  <script type="module" src="/app.js?v={{BUILD_DATE}}"></script>
+</body>
+</html>

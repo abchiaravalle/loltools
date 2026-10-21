@@ -1,0 +1,39 @@
+{
+  "csp": {
+    "script-src": "'self' 'wasm-unsafe-eval'"
+  },
+  "credits": [
+    {
+      "name": "gifenc 1.0.3 by Matt DesLauriers",
+      "license": "MIT",
+      "url": "https://github.com/mattdesl/gifenc",
+      "file": "/vendor/gifenc.esm.js",
+      "licenseFile": "/vendor/licenses/gifenc.LICENSE.md",
+      "note": "Writes the GIF file and builds its color palette. Served unmodified."
+    },
+    {
+      "name": "mp4box.js 2.4.1 by GPAC (Telecom Paris)",
+      "license": "BSD-3-Clause",
+      "url": "https://github.com/gpac/mp4box.js",
+      "file": "/vendor/mp4box.min.js",
+      "licenseFile": "/vendor/licenses/mp4box.LICENSE",
+      "note": "Reads the index of MP4 and MOV files so the sound can be pulled out in small pieces. The npm package's own code, bundled into one file with esbuild, no changes."
+    },
+    {
+      "name": "wasm-media-encoders 0.7.0 by arseneyr",
+      "license": "MIT",
+      "url": "https://github.com/arseneyr/wasm-media-encoders",
+      "file": "/vendor/WasmMediaEncoder.min.js",
+      "licenseFile": "/vendor/licenses/wasm-media-encoders.LICENSE",
+      "note": "The small loader that runs the MP3 encoder below. Served unmodified."
+    },
+    {
+      "name": "LAME 3.100 MP3 encoder, compiled to WebAssembly by wasm-media-encoders 0.7.0",
+      "license": "LGPL-2.0-or-later",
+      "url": "https://lame.sourceforge.io/",
+      "file": "/vendor/lame-mp3-wasm.js",
+      "licenseFile": "/vendor/licenses/LAME.COPYING",
+      "note": "The package's mp3.wasm, byte for byte, stored as base64 so the page doesn't need to fetch it (sha256 85e81719250b9a667b1258143f689dda70e3e57a7e7c29ab0b4cef65c8f6eb9a). Build scripts: https://github.com/arseneyr/wasm-media-encoders"
+    }
+  ]
+}
