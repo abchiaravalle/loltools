@@ -1,0 +1,88 @@
+/* nobg.lol page styles (on top of lol.css). */
+.hero h1 { text-wrap: balance; }
+
+/* Before/after stage. The cutout sits on a checkerboard (or the chosen color);
+   the original photo is clipped on top, and the slider moves the split. */
+.nb-stage {
+  --nb-split: 50%;
+  --nb-check-a: #ffffff;
+  --nb-check-b: #d9dee7;
+  position: relative;
+  width: 100%;
+  max-height: 70vh;
+  margin: 1.25rem auto 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background-color: var(--nb-check-a);
+  background-image:
+    linear-gradient(45deg, var(--nb-check-b) 25%, transparent 25%, transparent 75%, var(--nb-check-b) 75%),
+    linear-gradient(45deg, var(--nb-check-b) 25%, transparent 25%, transparent 75%, var(--nb-check-b) 75%);
+  background-size: 20px 20px;
+  background-position: 0 0, 10px 10px;
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.nb-stage.solid { background: var(--nb-bg, #ffffff); }
+.nb-stage img {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: contain; display: block; pointer-events: none;
+}
+.nb-before { clip-path: inset(0 calc(100% - var(--nb-split)) 0 0); }
+.nb-handle {
+  position: absolute; top: 0; bottom: 0; left: var(--nb-split);
+  width: 2px; margin-left: -1px; background: var(--accent);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.25);
+  pointer-events: none;
+}
+.nb-handle::after {
+  content: ""; position: absolute; top: 50%; left: 50%;
+  width: 30px; height: 30px; margin: -15px 0 0 -15px; border-radius: 50%;
+  background: var(--accent); border: 2px solid #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+}
+.nb-range {
+  position: absolute; inset: 0; width: 100%; height: 100%; margin: 0;
+  opacity: 0; cursor: ew-resize;
+}
+.nb-range:focus-visible ~ .nb-handle, .nb-stage:focus-within .nb-handle::after { outline: 2px solid var(--accent); outline-offset: 3px; }
+.nb-tag {
+  position: absolute; top: 0.6rem;
+  font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.04em;
+  padding: 0.2rem 0.5rem; border-radius: 4px;
+  background: rgba(11, 15, 23, 0.72); color: #fff; pointer-events: none;
+}
+.nb-tag-l { left: 0.6rem; }
+.nb-tag-r { right: 0.6rem; }
+.nb-caption {
+  margin: 0.6rem 0 0; text-align: center;
+  font-family: var(--font-mono); font-size: 0.78rem; color: var(--fg-muted);
+}
+
+/* Color picker + quick swatches */
+.nb-colors { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
+.nb-colors input[type="color"] { width: 64px; flex: 0 0 64px; cursor: pointer; }
+.nb-swatches { display: flex; gap: 0.45rem; flex-wrap: wrap; }
+.nb-swatch {
+  width: 32px; height: 32px; border-radius: 50%;
+  border: 1px solid var(--border); cursor: pointer; padding: 0;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+}
+.nb-swatch[aria-pressed="true"] { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+#fmtField { transition: opacity .15s ease; }
+
+/* Batch list: cutout thumbnails on a small checkerboard */
+.file-row { cursor: default; }
+.file-row.active { border-color: var(--accent); }
+.file-row .fr-thumb.cut {
+  object-fit: contain;
+  background-color: #fff;
+  background-image:
+    linear-gradient(45deg, #d9dee7 25%, transparent 25%, transparent 75%, #d9dee7 75%),
+    linear-gradient(45deg, #d9dee7 25%, transparent 25%, transparent 75%, #d9dee7 75%);
+  background-size: 10px 10px;
+  background-position: 0 0, 5px 5px;
+}
+#list { margin-top: 1.25rem; }

@@ -1,0 +1,176 @@
+<!doctype html>
+<!--
+  nobg.lol. View source. Everything happens in your browser.
+
+  What this page loads, all from this domain:
+    index.html, lol.css, lol.js, nobg.css, app.js, png.js, fflate.min.js (for the ZIP)
+    worker.js, a background thread that runs the AI model so the page stays responsive
+  Only after you add a photo, the worker also loads:
+    /vendor/imgly/background-removal.mjs  IMG.LY's background-removal library (AGPL-3.0),
+                                          with small changes listed in /vendor/imgly/PATCHES.md
+    /vendor/imgly/ort.wasm.min.mjs and ort-wasm-simd-threaded.mjs   ONNX Runtime (MIT)
+    /vendor/imgly/resources.json          the list of pieces below
+    26 files of 4 MiB or less named by their SHA-256: the IS-Net AI model (22 pieces, 88 MB)
+    and ONNX Runtime's WebAssembly engine (4 pieces, 13 MB). Your browser usually keeps a copy.
+
+  Nothing is uploaded. Your photo is read from your disk into this tab, cut out
+  here, and saved back to your disk. The Content-Security-Policy sets
+  connect-src 'self', which lets the page fetch its own model files and blocks
+  every request to any other site. This site is plain files with no server code,
+  so there's nothing here that could receive a photo anyway.
+
+  No analytics, no cookies, no ads. The only thing stored is your light/dark
+  choice, in localStorage on your device.
+
+  Source: https://github.com/abchiaravalle/loltools
+-->
+<html lang="en">
+<head>
+  <!--@head-->
+  <link rel="stylesheet" href="/nobg.css?v={{BUILD_DATE}}">
+</head>
+<body>
+  <div class="container">
+    <!--@header-->
+
+    <main>
+      <section class="hero">
+        <h1>Remove the background from a photo</h1>
+        <p class="lede">Drop in a photo and get the subject cut out, as a see-through PNG or on a solid color. The AI runs on your device, so your picture is never uploaded.</p>
+      </section>
+
+      <section class="card" aria-labelledby="tool-heading">
+        <h2 id="tool-heading" class="sr-only">Remove a background</h2>
+
+        <label class="dropzone" id="drop">
+          <svg class="dz-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="6" r="3"/><path d="M8.12 8.12 12 12"/><path d="M20 4 8.12 15.88"/><circle cx="6" cy="18" r="3"/><path d="M14.8 14.8 20 20"/></svg>
+          <span class="dz-title" id="dzTitle">Drop a photo here, or click to pick one</span>
+          <span class="dz-sub">JPG, PNG or WebP. Pick several at once to do a batch.</span>
+          <input type="file" id="fileInput" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" multiple>
+        </label>
+
+        <div class="progress" id="progress" hidden><span></span></div>
+        <p class="status" id="status" role="status" aria-live="polite"></p>
+
+        <div id="viewer" hidden>
+          <div class="nb-stage" id="stage">
+            <img class="nb-after" id="afterImg" alt="Your photo with the background removed">
+            <img class="nb-before" id="beforeImg" alt="Your original photo">
+            <span class="nb-tag nb-tag-l" aria-hidden="true">Before</span>
+            <span class="nb-tag nb-tag-r" aria-hidden="true">After</span>
+            <span class="nb-handle" aria-hidden="true"></span>
+            <input class="nb-range" id="compare" type="range" min="0" max="100" value="50" step="1" aria-label="Before and after. Slide left to see more of the cutout.">
+          </div>
+          <p class="nb-caption" id="caption"></p>
+
+          <div class="controls">
+            <div class="row-2">
+              <div class="field">
+                <span class="label" id="bgLabel">Background</span>
+                <div class="segmented" role="radiogroup" aria-labelledby="bgLabel">
+                  <input type="radio" name="bg" id="bg-none" value="none" checked><label for="bg-none">See-through</label>
+                  <input type="radio" name="bg" id="bg-color" value="color"><label for="bg-color">Solid color</label>
+                </div>
+              </div>
+              <div class="field" id="fmtField">
+                <span class="label" id="fmtLabel">Save as</span>
+                <div class="segmented" role="radiogroup" aria-labelledby="fmtLabel">
+                  <input type="radio" name="fmt" id="fmt-png" value="png" checked><label for="fmt-png">PNG</label>
+                  <input type="radio" name="fmt" id="fmt-jpg" value="jpg"><label for="fmt-jpg">JPG</label>
+                </div>
+              </div>
+            </div>
+            <div class="field" id="colorField" hidden>
+              <label for="bgColor">Color</label>
+              <div class="nb-colors">
+                <input type="color" id="bgColor" value="#ffffff">
+                <div class="nb-swatches" role="group" aria-label="Quick colors">
+                  <button type="button" class="nb-swatch" data-c="#ffffff" style="background:#ffffff" aria-label="White"></button>
+                  <button type="button" class="nb-swatch" data-c="#f1f5f9" style="background:#f1f5f9" aria-label="Light gray"></button>
+                  <button type="button" class="nb-swatch" data-c="#000000" style="background:#000000" aria-label="Black"></button>
+                  <button type="button" class="nb-swatch" data-c="#1e3a8a" style="background:#1e3a8a" aria-label="Navy"></button>
+                  <button type="button" class="nb-swatch" data-c="#9ef0a1" style="background:#9ef0a1" aria-label="Mint"></button>
+                  <button type="button" class="nb-swatch" data-c="#9a8cff" style="background:#9a8cff" aria-label="Lavender"></button>
+                </div>
+              </div>
+            </div>
+            <p class="hint" id="fmtHint">See-through backgrounds save as PNG. JPG can't store see-through pixels.</p>
+          </div>
+
+          <div class="actions">
+            <button class="btn-primary" type="button" id="saveBtn" disabled>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
+              <span id="saveLabel">Download PNG</span>
+            </button>
+            <button class="btn-ghost" type="button" id="zipBtn" hidden disabled>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
+              Download all as ZIP
+            </button>
+            <button class="btn-ghost" type="button" id="clearBtn">Clear</button>
+          </div>
+        </div>
+
+        <ul class="file-list" id="list" aria-label="Your photos" hidden></ul>
+      </section>
+
+      <section class="card privacy-card" aria-labelledby="privacy-heading">
+        <h2 id="privacy-heading">How your photos stay private</h2>
+        <ul class="privacy-grid">
+          <li>
+            <svg class="pg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
+            <div><span class="pg-title">No upload</span><span class="pg-desc">The AI model runs inside this tab. Your browser reads the photo from your disk, cuts it out in memory and saves the result back to your disk.</span></div>
+          </li>
+          <li>
+            <svg class="pg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <div><span class="pg-title">Locked to this site</span><span class="pg-desc">The page's security policy only lets it fetch files from nobg.lol itself, which is how it gets the AI model. There's no server code here to receive a photo.</span></div>
+          </li>
+          <li>
+            <svg class="pg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            <div><span class="pg-title">The old background is wiped</span><span class="pg-desc">Pixels that end up fully see-through are blanked in the file, so the background can't be brought back by switching transparency off. Only the soft edge right around the subject keeps its colors. No location or camera details are saved.</span></div>
+          </li>
+          <li>
+            <svg class="pg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
+            <div><span class="pg-title">No analytics or cookies</span><span class="pg-desc">No tracking scripts, no ads, no account. Our host, Cloudflare, keeps standard logs of page visits, like it does for every site. Your photos aren't in them.</span></div>
+          </li>
+        </ul>
+        <p class="privacy-cta">The code is open source. Read every line on <a href="https://github.com/abchiaravalle/loltools">GitHub</a>. The cutting is done by IMG.LY's <a href="https://github.com/imgly/background-removal-js">background-removal</a> library (AGPL-3.0) and the <a href="https://github.com/xuebinqin/DIS">IS-Net</a> model, both served from this domain.</p>
+      </section>
+
+      <section class="card faq" aria-labelledby="faq-heading">
+        <h2 id="faq-heading">Questions</h2>
+        <details>
+          <summary>Why does the first photo take a while?</summary>
+          <p>The first time, your browser downloads the AI model, about 96 MB. On a phone, use Wi-Fi. Your browser usually keeps a copy, so next time it starts much faster. After that, a photo takes a few seconds on a laptop and longer on a phone. If the subject runs off the edge of the photo, the AI takes a second look to keep that part solid, which doubles the time.</p>
+        </details>
+        <details>
+          <summary>What kind of photo works best?</summary>
+          <p>One clear subject, like a person, a pet or a product, that stands out from what's behind it. Fine hair, glass, smoke, busy scenes with lots of objects, and subjects the same color as the background can come out rough or partly see-through. There's no brush here to touch up the result, so check the preview before you use it.</p>
+        </details>
+        <details>
+          <summary>Can it open iPhone HEIC photos?</summary>
+          <p>Not directly. Turn them into JPGs with heic.lol first (it's in the list of tools below). It also works in your browser with no upload. Then drop the JPG here.</p>
+        </details>
+        <details>
+          <summary>PNG or JPG?</summary>
+          <p>For a see-through background you need PNG, which works in slides, design apps and most websites. On a solid color, JPG is much smaller and opens anywhere, and PNG keeps every pixel exact.</p>
+        </details>
+        <details>
+          <summary>Is there a size limit?</summary>
+          <p>No daily limit and no watermark. Photos over 16 megapixels are scaled down to 16 so phone browsers can cope. The AI looks at a 1024 by 1024 copy of your photo and scales its cutout back up, so on very large photos the edges can look a little soft.</p>
+        </details>
+        <details>
+          <summary>Who made the AI, and is the code really open?</summary>
+          <p>The model is IS-Net, from the DIS research project (Apache-2.0). It runs through IMG.LY's background-removal library (AGPL-3.0) and Microsoft's ONNX Runtime (MIT). All of nobg.lol's code is on GitHub, including the small changes we made to the library so it never talks to IMG.LY's servers. See the <a href="/licenses/">credits page</a>.</p>
+        </details>
+      </section>
+
+      <!--@more-->
+    </main>
+
+    <!--@footer-->
+  </div>
+
+  <script src="/fflate.min.js"></script>
+  <script type="module" src="/app.js?v={{BUILD_DATE}}"></script>
+</body>
+</html>

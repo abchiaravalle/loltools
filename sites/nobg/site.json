@@ -1,0 +1,39 @@
+{
+  "vendor": ["fflate.min.js"],
+  "csp": {
+    "script-src": "'self' 'wasm-unsafe-eval'",
+    "connect-src": "'self'",
+    "worker-src": "'self'"
+  },
+  "headers": {
+    "Cross-Origin-Opener-Policy": "same-origin",
+    "Cross-Origin-Embedder-Policy": "require-corp",
+    "Cross-Origin-Resource-Policy": "same-origin"
+  },
+  "credits": [
+    {
+      "name": "@imgly/background-removal 1.7.0 by IMG.LY",
+      "license": "AGPL-3.0",
+      "url": "https://github.com/imgly/background-removal-js",
+      "file": "/vendor/imgly/background-removal.mjs",
+      "licenseFile": "/vendor/licenses/imgly-background-removal.LICENSE.md",
+      "note": "Lightly modified so it runs under this site's strict security policy and never contacts IMG.LY's servers. Every change is listed in /vendor/imgly/PATCHES.md, and the script that makes the file is tests/nobg/build-vendor.mjs in our repo. It bundles lodash-es 4.17.21, zod 3.24.2, is-buffer 1.1.6 and iota-array 1.0.0 (all MIT, licence texts in /vendor/licenses/imgly-bundled-deps.LICENSE)."
+    },
+    {
+      "name": "IS-Net background removal model (DIS), fp16 version from @imgly/background-removal-data 1.7.0",
+      "license": "Apache-2.0 (model); packaging AGPL-3.0 by IMG.LY",
+      "url": "https://github.com/xuebinqin/DIS",
+      "file": "/vendor/imgly/ (the 4 MiB pieces listed under /models/isnet_fp16 in resources.json)",
+      "licenseFile": "/vendor/licenses/isnet-dis.LICENSE",
+      "note": "Served unmodified, in the pieces IMG.LY publishes at https://staticimgly.com/@imgly/background-removal-data/1.7.0/package.tgz."
+    },
+    {
+      "name": "ONNX Runtime Web 1.21.0 (Microsoft)",
+      "license": "MIT",
+      "url": "https://github.com/microsoft/onnxruntime",
+      "file": "/vendor/imgly/ort.wasm.min.mjs, /vendor/imgly/ort-wasm-simd-threaded.mjs and the .wasm pieces",
+      "licenseFile": "/vendor/licenses/onnxruntime.LICENSE",
+      "note": "Served unmodified (the .wasm is split into 4 MiB pieces). Third-party notices: /vendor/licenses/onnxruntime.ThirdPartyNotices.txt"
+    }
+  ]
+}
